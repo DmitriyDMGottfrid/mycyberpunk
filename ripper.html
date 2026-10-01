@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBERPUNK // РИППЕРДОК</title>
+<style>
+  :root {
+    --cyan: #00ffff;
+    --magenta: #ff00ff;
+    --yellow: #ffcc00;
+    --green: #00ff00;
+    --red: #ff0040;
+    --bg-dark: #05060a;
+    --bg-panel: rgba(5, 6, 10, 0.85);
+    --font-mono: 'Courier New', Courier, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-dark);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    overflow-x: hidden;
+    overflow-y: auto;
+    cursor: crosshair;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .menu {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px 25px;
+    z-index: 100;
+    padding: 15px 25px;
+    background: rgba(5, 6, 10, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    max-width: 95vw;
+  }
+
+  .menu-item {
+    position: relative;
+    padding: 6px 12px 6px 22px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s, text-shadow 0.2s;
+    white-space: nowrap;
+  }
+
+  .menu-item::before {
+    content: '[';
+    position: absolute;
+    left: 4px;
+    color: var(--magenta);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .menu-item .bracket {
+    color: var(--magenta);
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-left: 14px;
+  }
+
+  .menu-item::after {
+    content: '_';
+    position: absolute;
+    right: 22px;
+    bottom: 6px;
+    color: var(--magenta);
+    opacity: 0;
+  }
+
+  .menu-item:hover {
+    color: var(--magenta);
+    text-shadow: 0 0 8px var(--magenta);
+  }
+
+  .menu-item:hover::before,
+  .menu-item:hover::after,
+  .menu-item:hover .bracket { opacity: 1; }
+
+  .menu-item:hover::after { animation: blink 0.8s step-end infinite; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .menu-item.active {
+    color: var(--yellow);
+    text-shadow: 0 0 10px var(--yellow);
+  }
+
+  .menu-item.active::before,
+  .menu-item.active::after,
+  .menu-item.active .bracket {
+    opacity: 1;
+    color: var(--yellow);
+  }
+
+  .menu-item.active::after { animation: blink 0.8s step-end infinite; }
+
+  .hero-section {
+    position: relative;
+    height: 50vh;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 60px;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: -10%;
+    width: 120%;
+    height: 120%;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a051a 50%, #0a0a1a 100%);
+    z-index: 1;
+  }
+
+  .hero-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 15s linear infinite;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(40px, 40px); }
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 20%, rgba(5,6,10,0.9) 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .hero-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+    background: linear-gradient(to top, var(--bg-dark), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 4;
+    text-align: center;
+  }
+
+  .site-title {
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: bold;
+    letter-spacing: 10px;
+    color: #fff;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px rgba(0,255,255,0.5);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .site-title::before,
+  .site-title::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .site-title::before {
+    color: var(--cyan);
+    z-index: -1;
+    animation: glitchTop 3s infinite linear alternate-reverse;
+  }
+
+  .site-title::after {
+    color: var(--magenta);
+    z-index: -2;
+    animation: glitchBottom 2.5s infinite linear alternate-reverse;
+  }
+
+  @keyframes glitchTop {
+    0%, 90%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    92% { clip-path: inset(20% 0 60% 0); transform: translate(-4px, -2px); }
+    94% { clip-path: inset(60% 0 10% 0); transform: translate(4px, 2px); }
+  }
+
+  @keyframes glitchBottom {
+    0%, 88%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    90% { clip-path: inset(70% 0 5% 0); transform: translate(4px, 2px); }
+    93% { clip-path: inset(10% 0 50% 0); transform: translate(-4px, -2px); }
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--magenta);
+    text-shadow: 0 0 10px var(--magenta);
+  }
+
+  .ripper-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 6px 16px;
+    border: 1px solid var(--red);
+    background: rgba(255, 0, 64, 0.1);
+    color: var(--red);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: pulseBorder 2s infinite;
+  }
+
+  @keyframes pulseBorder {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 0, 64, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(255, 0, 64, 0.6); }
+  }
+
+  .filter-panel {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    position: relative;
+    z-index: 5;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--bg-panel);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-left: 3px solid var(--cyan);
+  }
+
+  .filter-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    margin-right: 10px;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid rgba(0,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .filter-btn:hover,
+  .filter-btn.active {
+    background: rgba(0,255,255,0.1);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,255,255,0.3);
+    color: #fff;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+    position: relative;
+    z-index: 5;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0,255,255,0.3);
+    padding-bottom: 10px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0,255,255,0.5);
+  }
+
+  .section-header .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
+
+  .implants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 25px;
+    margin-bottom: 60px;
+  }
+
+  .implant-card {
+    position: relative;
+    background: var(--bg-panel);
+    border: 1px solid rgba(0,255,255,0.2);
+    padding: 15px;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    clip-path: polygon(
+      0 0, 
+      100% 0, 
+      100% calc(100% - 15px), 
+      calc(100% - 15px) 100%, 
+      0 100%
+    );
+  }
+
+  .implant-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--cyan);
+    transition: all 0.3s;
+  }
+
+  .implant-card:hover {
+    border-color: rgba(0,255,255,0.5);
+    box-shadow: 0 0 30px rgba(0,255,255,0.2);
+    transform: translateY(-5px);
+  }
+
+  .implant-preview {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    margin-bottom: 15px;
+    border: 1px solid rgba(0,255,255,0.2);
+    background: #ffffff;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .implant-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    transition: transform 0.5s;
+    cursor: zoom-in; /* ← кликабельно */
+  }
+
+  .implant-card:hover .implant-preview img {
+    transform: scale(1.05);
+  }
+
+  .implant-preview .placeholder-icon {
+    font-size: 64px;
+    color: var(--cyan);
+    text-shadow: 0 0 15px var(--cyan);
+  }
+
+  .implant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+  }
+
+  .implant-name {
+    font-size: 18px;
+    color: #fff;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 5px rgba(255,255,255,0.3);
+  }
+
+  .implant-category {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    text-transform: uppercase;
+  }
+
+  .implant-price {
+    font-size: 20px;
+    color: var(--green);
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
+  }
+
+  .implant-price::before {
+    content: '₽';
+    font-size: 14px;
+    margin-right: 3px;
+  }
+
+  /* ===== ОБЁРТКА ОПИСАНИЯ С КНОПКОЙ РАЗВЕРНУТЬ ===== */
+  .implant-desc-wrapper {
+    flex: 1;
+    margin-bottom: 20px;
+  }
+
+  .implant-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+  }
+
+  .implant-desc-toggle {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid var(--cyan);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .implant-desc-toggle:hover {
+    background: rgba(0,255,255,0.15);
+    box-shadow: 0 0 10px rgba(0,255,255,0.5);
+    color: #fff;
+  }
+
+  .implant-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-left: 2px solid var(--cyan);
+  }
+
+  .spec-item {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .spec-label {
+    color: var(--magenta);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .spec-value {
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .verdict {
+    padding: 12px;
+    background: rgba(0,0,0,0.4);
+    border-left: 3px solid var(--yellow);
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 15px;
+  }
+
+  .verdict::before {
+    content: 'В НАЛИЧИИ: ';
+    color: var(--yellow);
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+
+  .implant-buy-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: var(--green);
+    background: rgba(0,255,0,0.05);
+    border: 1px solid var(--green);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .implant-buy-btn:hover:not(:disabled) {
+    background: rgba(0,255,0,0.15);
+    box-shadow: 0 0 20px rgba(0,255,0,0.5);
+    color: #fff;
+  }
+
+  .implant-buy-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(255,0,64,0.05);
+  }
+
+  /* ===== ЛАЙТБОКС ДЛЯ КАРТИНКИ ===== */
+  .image-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    cursor: zoom-out;
+  }
+
+  .image-lightbox.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .image-lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border: 2px solid var(--cyan);
+    box-shadow: 0 0 60px rgba(0,255,255,0.5);
+    cursor: zoom-out;
+    animation: lightboxIn 0.3s ease-out;
+  }
+
+  @keyframes lightboxIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .image-lightbox-hint {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0,255,255,0.6);
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 12px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0,255,255,0.2);
+  }
+
+  .comparison-table th {
+    background: rgba(0,0,0,0.5);
+    color: var(--cyan);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .comparison-table td {
+    color: rgba(255,255,255,0.8);
+  }
+
+  .comparison-table tr:hover td {
+    background: rgba(0,255,255,0.05);
+  }
+
+  .table-rating {
+    color: var(--yellow);
+  }
+
+  .table-price {
+    color: var(--green);
+    font-weight: bold;
+  }
+
+  .side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(420px, 85vw);
+    height: calc(100vh - 28px);
+    background: linear-gradient(135deg, rgba(5,5,15,0.97) 0%, rgba(10,0,20,0.98) 100%);
+    border-left: 2px solid var(--cyan);
+    box-shadow: -10px 0 40px rgba(0,255,255,0.2), inset 0 0 60px rgba(0,255,255,0.03);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 150;
+    padding: 80px 35px 35px;
+    overflow-y: auto;
+  }
+
+  .side-panel.open { transform: translateX(0); }
+
+  .side-panel::before, .side-panel::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--magenta);
+  }
+  .side-panel::before { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+  .side-panel::after { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+
+  .panel-close {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .panel-close:hover { background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); color: #fff; }
+
+  .panel-mode { font-size: 11px; letter-spacing: 4px; color: var(--magenta); margin-bottom: 8px; text-transform: uppercase; opacity: 0.8; }
+  .panel-mode::before { content: '> '; color: var(--cyan); }
+  .panel-title { font-size: 22px; letter-spacing: 3px; color: #fff; text-transform: uppercase; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,255,255,0.3); text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+
+  .typewriter-block {
+    position: relative;
+    padding: 20px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-left: 3px solid var(--cyan);
+    margin-bottom: 25px;
+  }
+  .typewriter-block::before {
+    content: 'SYS.MSG';
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: #050510;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .typewriter-text { font-size: 18px; letter-spacing: 2px; color: var(--green); text-shadow: 0 0 8px rgba(0,255,0,0.6); min-height: 28px; line-height: 1.4; }
+  .typewriter-cursor { display: inline-block; width: 10px; height: 20px; background: var(--green); margin-left: 4px; vertical-align: middle; animation: cursorBlink 0.7s step-end infinite; box-shadow: 0 0 8px var(--green); }
+  @keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .status-lines { font-size: 11px; letter-spacing: 1px; color: rgba(0,255,255,0.7); line-height: 1.8; margin-bottom: 30px; }
+  .status-lines .line { opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.3s; }
+  .status-lines .line.visible { opacity: 1; transform: translateX(0); }
+  .status-lines .line .ok { color: var(--green); text-shadow: 0 0 5px var(--green); }
+  .status-lines .line .warn { color: var(--yellow); text-shadow: 0 0 5px var(--yellow); }
+
+  .uplink-content {
+    display: none;
+    margin-top: 20px;
+  }
+
+  .uplink-content.visible {
+    display: block;
+    animation: fadeSlideIn 0.5s ease-out;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .contact-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,255,255,0.3);
+    border-left: 3px solid var(--magenta);
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+  }
+
+  .contact-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: #0a0015;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    text-transform: uppercase;
+  }
+
+  .contact-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-bottom: 1px dashed rgba(0,255,255,0.15);
+  }
+
+  .contact-row:last-child { border-bottom: none; }
+  .contact-row .label { color: rgba(0,255,255,0.7); }
+  .contact-row .value { color: #fff; text-shadow: 0 0 5px rgba(0,255,255,0.5); font-weight: bold; }
+  .contact-row .value.encrypted { color: var(--yellow); font-family: monospace; letter-spacing: 2px; }
+  .contact-row .value.secure { color: var(--green); text-shadow: 0 0 5px var(--green); }
+
+  .uplink-warning {
+    margin-top: 20px;
+    padding: 12px;
+    background: rgba(255,0,64,0.1);
+    border: 1px solid rgba(255,0,64,0.4);
+    border-left: 3px solid var(--red);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #ff6680;
+    line-height: 1.6;
+  }
+
+  .uplink-warning::before {
+    content: '⚠ ВНИМАНИЕ: ';
+    color: var(--red);
+    font-weight: bold;
+    text-shadow: 0 0 5px var(--red);
+  }
+
+  .implant-choice {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.5s, transform 0.5s;
+    border-top: 1px dashed rgba(255,0,255,0.3);
+    padding-top: 20px;
+  }
+  .implant-choice.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .choice-prompt { font-size: 14px; letter-spacing: 2px; color: #fff; margin-bottom: 20px; text-align: center; text-shadow: 0 0 8px rgba(255,255,255,0.5); animation: promptPulse 2s infinite; }
+  @keyframes promptPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .choice-buttons { display: flex; gap: 15px; justify-content: center; }
+
+  .cyber-btn {
+    flex: 1;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    background: transparent;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+  .cyber-btn::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.3s;
+  }
+  .cyber-btn:hover::before { left: 100%; }
+  .yes-btn { border-color: var(--green); color: var(--green); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+  .yes-btn:hover { background: rgba(0,255,0,0.15); box-shadow: 0 0 20px rgba(0,255,0,0.6); text-shadow: 0 0 8px var(--green); }
+  .no-btn { border-color: var(--red); color: var(--red); box-shadow: 0 0 10px rgba(255,0,64,0.2); }
+  .no-btn:hover { background: rgba(255,0,64,0.15); box-shadow: 0 0 20px rgba(255,0,64,0.6); text-shadow: 0 0 8px var(--red); }
+
+  .transition-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .transition-overlay.active { opacity: 1; pointer-events: all; }
+  .transition-text { font-size: 24px; letter-spacing: 5px; color: var(--cyan); text-shadow: 0 0 15px var(--cyan); margin-bottom: 20px; animation: glitch 0.3s infinite; }
+  .progress-bar { width: 300px; height: 4px; background: rgba(0,255,255,0.2); position: relative; overflow: hidden; }
+  .progress-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes glitch {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    20% { filter: hue-rotate(90deg) saturate(2); transform: translate(-2px, 1px); }
+    40% { filter: hue-rotate(180deg) saturate(1.5); transform: translate(2px, -1px); }
+    60% { filter: hue-rotate(270deg) saturate(2); transform: translate(-1px, -1px); }
+    80% { filter: hue-rotate(360deg) saturate(1.2); transform: translate(1px, 1px); }
+    100% { filter: hue-rotate(0deg) saturate(1); transform: translate(0); }
+  }
+
+  .system-ticker {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    background: rgba(0, 5, 10, 0.95);
+    border-top: 1px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    z-index: 90;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    text-shadow: 0 0 5px rgba(0,255,255,0.5);
+  }
+  .ticker-track { display: flex; white-space: nowrap; animation: scrollTicker 25s linear infinite; }
+  .ticker-track span { padding-right: 60px; display: flex; align-items: center; gap: 15px; }
+  .ticker-track .separator { color: var(--magenta); font-weight: bold; }
+  @keyframes scrollTicker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  .sound-btn {
+    position: fixed;
+    bottom: 40px;
+    right: 20px;
+    padding: 10px 18px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    z-index: 200;
+    transition: all 0.2s;
+  }
+  .sound-btn:hover { background: rgba(0,255,255,0.1); box-shadow: 0 0 15px rgba(0,255,255,0.5); }
+  .sound-btn.muted { border-color: var(--magenta); color: var(--magenta); }
+
+  .cyber-footer {
+    background: #020205;
+    border-top: 1px solid rgba(0,255,255,0.2);
+    padding: 40px 20px 60px;
+    text-align: center;
+    position: relative;
+    z-index: 5;
+  }
+  .footer-copy { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+  .footer-copy span { color: var(--magenta); }
+
+  /* ===== МОДАЛКА ЗАКАЗА ===== */
+  .order-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .order-modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .order-modal {
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    background: linear-gradient(135deg, rgba(5,5,15,0.98) 0%, rgba(10,0,20,0.98) 100%);
+    border: 2px solid var(--cyan);
+    box-shadow: 0 0 60px rgba(0,255,255,0.3);
+    padding: 35px;
+    position: relative;
+    overflow-y: auto;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+  }
+
+  .order-modal-close {
+    position: absolute;
+    top: 15px; right: 15px;
+    width: 36px; height: 36px;
+    background: transparent;
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .order-modal-close:hover {
+    background: rgba(255,0,255,0.15);
+    box-shadow: 0 0 15px rgba(255,0,255,0.5);
+    color: #fff;
+  }
+
+  .order-modal-title {
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: #fff;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0,255,255,0.5);
+  }
+
+  .order-modal-title::before { content: '> '; color: var(--cyan); }
+
+  .order-modal-product {
+    font-size: 14px;
+    color: var(--yellow);
+    letter-spacing: 1px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px dashed rgba(0,255,255,0.3);
+  }
+
+  .order-form-group { margin-bottom: 18px; }
+
+  .order-form-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .order-form-label::before { content: '> '; color: var(--cyan); }
+
+  .order-form-input,
+  .order-form-select {
+    width: 100%;
+    padding: 11px 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,255,0.2);
+    outline: none;
+    transition: all 0.3s;
+  }
+
+  .order-form-input:focus,
+  .order-form-select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0,255,255,0.3);
+  }
+
+  .order-form-select { cursor: pointer; }
+  .order-form-select option { background: #05060a; color: #fff; }
+
+  .order-total-preview {
+    padding: 12px;
+    background: rgba(0,255,255,0.05);
+    border: 1px solid rgba(0,255,255,0.2);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .order-total-preview .label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .order-total-preview .value {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--green);
+    text-shadow: 0 0 10px var(--green);
+  }
+
+  .order-form-submit {
+    width: 100%;
+    padding: 15px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: var(--green);
+    background: transparent;
+    border: 1px solid var(--green);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .order-form-submit:hover:not(:disabled) {
+    background: rgba(0,255,0,0.15);
+    box-shadow: 0 0 25px rgba(0,255,0,0.5);
+  }
+
+  .order-form-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    .menu { gap: 10px 15px; padding: 10px 15px; }
+    .menu-item { font-size: 9px; letter-spacing: 1px; padding: 5px 8px; }
+    .menu-item .bracket { margin-left: 8px; }
+    .site-title { letter-spacing: 4px; }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+    .implants-grid { grid-template-columns: 1fr; }
+    .comparison-table { font-size: 10px; }
+    .comparison-table th, .comparison-table td { padding: 8px; }
+    .choice-buttons { flex-direction: column; }
+    .image-lightbox { padding: 15px; }
+  }
+</style>
+</head>
+<body>
+
+  <nav class="menu">
+    <div class="menu-item" data-mode="hub">Центральный_хаб<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="stream">Поток_данных<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="manifest">Манифест<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="logs">Логи<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="matrix">Матрица_образов<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="access">Доступ<span class="bracket">]</span></div>
+    <div class="menu-item active" data-mode="ripper">Риппердок<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="cog">Когнитивный_фид<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="implant">Имплантаты<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="uplink">Аплинк<span class="bracket">]</span></div>
+  </nav>
+
+  <div class="side-panel" id="sidePanel">
+    <button class="panel-close" id="panelClose">✕</button>
+    <div class="panel-mode" id="panelMode">MODE: RIPPER</div>
+    <div class="panel-title" id="panelTitle">Инициализация</div>
+
+    <div class="typewriter-block">
+      <div class="typewriter-text" id="typewriterText"></div>
+      <span class="typewriter-cursor" id="typewriterCursor"></span>
+    </div>
+
+    <div class="status-lines" id="statusLines">
+      <div class="line" data-delay="200">> Нейронный интерфейс... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="400">> Синхронизация кортекса... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="600">> Калибровка зрительного модуля... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="800">> Подключение к сети... <span class="warn">[WAIT]</span></div>
+      <div class="line" data-delay="1000">> Шифрование канала AES-256... <span class="ok">[OK]</span></div>
+    </div>
+
+    <div class="uplink-content" id="uplinkContent">
+      <div class="contact-block" data-label="КАНАЛЫ СВЯЗИ">
+        <div class="contact-row">
+          <span class="label">Зашифрованный email:</span>
+          <span class="value encrypted">booshes@mail.ru</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Комм-линк:</span>
+          <span class="value">+7 (951)298-95-60</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Нейро-частота:</span>
+          <span class="value secure">144.7 MHz [SECURE]</span>
+        </div>
+      </div>
+
+      <div class="contact-block" data-label="ТОЧКА СБРОСА">
+        <div class="contact-row">
+          <span class="label">Геолокация:</span>
+          <span class="value">Камчатский край</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Координаты:</span>
+          <span class="value encrypted">52.82815996002017 N, 158.13302884255168 E</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Часы работы:</span>
+          <span class="value">24/7 // БЕЗ ВЫХОДНЫХ</span>
+        </div>
+      </div>
+
+      <div class="contact-block" data-label="СОЦ. СЕТИ">
+        <div class="contact-row">
+          <span class="label">VK:</span>
+          <span class="value">ID:381628178</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">TeleGram:</span>
+          <span class="value">@DmitriyDM97</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Synaploids implants:</span>
+          <span class="value secure">Synaploid-free zone / sector</span>
+        </div>
+      </div>
+
+      <div class="uplink-warning">
+        Все каналы связи проходят через прокси-серверы корпорации. 
+        Не передавайте персональные данные без верификации PGP-ключа. 
+        Ответ в течение 24 часов.
+      </div>
+    </div>
+
+    <div class="implant-choice" id="implantChoice">
+      <div class="choice-prompt">> ЗАДЕЙСТВОВАТЬ ИМПЛАНТАТ?</div>
+      <div class="choice-buttons">
+        <button class="cyber-btn yes-btn" id="btnYes">[ ДА ]</button>
+        <button class="cyber-btn no-btn" id="btnNo">[ НЕТ ]</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="transition-overlay" id="transitionOverlay">
+    <div class="transition-text" id="transitionText">ПЕРЕХОД В РАЗДЕЛ...</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <section class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1 class="site-title" data-text="РИППЕРДОК">РИППЕРДОК</h1>
+      <div class="hero-subtitle">> КИБЕР-МЕРЧ // МОДИФИКАЦИИ_ТЕЛА <</div>
+      <div class="ripper-badge">
+        ОФИЦИАЛЬНЫЙ МАГАЗИН
+      </div>
+    </div>
+  </section>
+
+  <div class="filter-panel">
+    <div class="filter-bar">
+      <span class="filter-label">> КАТЕГОРИЯ:</span>
+      <button class="filter-btn active" data-filter="all">ВСЕ</button>
+      <button class="filter-btn" data-filter="ОДЕЖДА">ОДЕЖДА</button>
+      <button class="filter-btn" data-filter="АКСЕССУАРЫ">АКСЕССУАРЫ</button>
+      <button class="filter-btn" data-filter="ПОСТЕРЫ">ПОСТЕРЫ</button>
+      <button class="filter-btn" data-filter="СТИКЕРЫ">СТИКЕРЫ</button>
+    </div>
+  </div>
+
+  <main class="container">
+    
+    <div class="section-header">
+      <h2>[ КАТАЛОГ_ТОВАРОВ ]</h2>
+      <div class="line"></div>
+    </div>
+
+    <div class="implants-grid" id="implantsGrid">
+      <div style="color: var(--cyan); text-align: center; padding: 40px; grid-column: 1 / -1;">Загрузка данных из матрицы...</div>
+    </div>
+
+    <div class="section-header">
+      <h2>[ СРАВНЕНИЕ_МОДЕЛЕЙ ]</h2>
+      <div class="line"></div>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table class="comparison-table" id="comparisonTable">
+        <thead>
+          <tr>
+            <th>МОДЕЛЬ</th>
+            <th>КАТЕГОРИЯ</th>
+            <th>РЕЙТИНГ</th>
+            <th>ЦЕНА</th>
+            <th>СТАТУС</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <footer class="cyber-footer">
+    <div class="footer-copy">
+      © 2026 MY_CYBERPUNK <span>//</span> ALL RIGHTS RESERVED <span>//</span> DESIGNED IN NIGHT CITY
+    </div>
+  </footer>
+
+  <div class="system-ticker">
+    <div class="ticker-track">
+      <span>
+        RIPPER_STORE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        RIPPER_STORE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+      </span>
+      <span>
+        RIPPER_STORE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        RIPPER_STORE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+      </span>
+    </div>
+  </div>
+
+  <button class="sound-btn" id="soundBtn">■ ВЫКЛ ЗВУК</button>
+
+  <!-- ===== ЛАЙТБОКС ДЛЯ КАРТИНКИ ===== -->
+  <div class="image-lightbox" id="imageLightbox">
+    <img id="lightboxImg" src="" alt="">
+    <div class="image-lightbox-hint">[ КЛИКНИТЕ ИЛИ ESC, ЧТОБЫ ЗАКРЫТЬ ]</div>
+  </div>
+
+  <!-- ===== МОДАЛКА ОФОРМЛЕНИЯ ЗАКАЗА ===== -->
+  <div class="order-modal-overlay" id="orderModal">
+    <div class="order-modal">
+      <button class="order-modal-close" id="orderModalClose">✕</button>
+      <h2 class="order-modal-title">ОФОРМИТЬ ЗАКАЗ</h2>
+      <div class="order-modal-product" id="orderProductName">—</div>
+
+      <form id="orderForm">
+        <input type="hidden" id="orderMerchId">
+
+        <div class="order-form-group">
+          <label class="order-form-label" for="orderName">Имя заказчика</label>
+          <input type="text" class="order-form-input" id="orderName" required maxlength="100" placeholder="Иван Иванов">
+        </div>
+
+        <div class="order-form-group">
+          <label class="order-form-label" for="orderPhone">Номер телефона</label>
+          <input type="tel" class="order-form-input" id="orderPhone" required placeholder="+7 (___) ___-__-__">
+        </div>
+
+        <div class="order-form-group">
+          <label class="order-form-label" for="orderEmail">E-mail</label>
+          <input type="email" class="order-form-input" id="orderEmail" required placeholder="you@example.com">
+        </div>
+
+        <div class="order-form-group">
+          <label class="order-form-label" for="orderQty">Количество</label>
+          <input type="number" class="order-form-input" id="orderQty" min="1" value="1" required>
+        </div>
+
+        <div class="order-form-group" id="orderSizeGroup">
+          <label class="order-form-label" for="orderSize">Размер</label>
+          <select class="order-form-select" id="orderSize"></select>
+        </div>
+
+        <div class="order-total-preview">
+          <span class="label">ИТОГО:</span>
+          <span class="value" id="orderTotal">0 ₽</span>
+        </div>
+
+        <button type="submit" class="order-form-submit" id="orderSubmitBtn">[ ОТПРАВИТЬ ]</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+  const sidePanel = document.getElementById('sidePanel');
+  const panelClose = document.getElementById('panelClose');
+  const panelMode = document.getElementById('panelMode');
+  const panelTitle = document.getElementById('panelTitle');
+  const typewriterText = document.getElementById('typewriterText');
+  const implantChoice = document.getElementById('implantChoice');
+  const uplinkContent = document.getElementById('uplinkContent');
+  const btnYes = document.getElementById('btnYes');
+  const btnNo = document.getElementById('btnNo');
+  const transitionOverlay = document.getElementById('transitionOverlay');
+  const transitionText = document.getElementById('transitionText');
+  const progressFill = document.getElementById('progressFill');
+  const statusLines = document.querySelectorAll('.status-lines .line');
+  const soundBtn = document.getElementById('soundBtn');
+  const implantsGrid = document.getElementById('implantsGrid');
+  const comparisonTable = document.querySelector('#comparisonTable tbody');
+
+  let currentMode = 'RIPPER';
+  let typeWriterTimer = null;
+  let statusTimers = [];
+  let soundEnabled = true;
+  let audioCtx = null;
+  let currentFilter = 'all';
+  let allImplants = [];
+
+  const DESC_LIMIT = 100; // ← сколько знаков показывать до кнопки "РАЗВЕРНУТЬ"
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playKeyClick() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 800 + Math.random() * 400;
+    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function playSuccessSound() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    initAudio();
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) {
+      soundBtn.textContent = '■ ВЫКЛ ЗВУК';
+      soundBtn.classList.remove('muted');
+    } else {
+      soundBtn.textContent = '▶ ВКЛ ЗВУК';
+      soundBtn.classList.add('muted');
+    }
+  });
+
+  function unlockAudio() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+  }
+
+  document.addEventListener('click', unlockAudio, { once: true });
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+
+  // ============================================================
+  // ===== ЛАЙТБОКС =============================================
+  // ============================================================
+  const imageLightbox = document.getElementById('imageLightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+
+  window.openLightbox = function(src) {
+    lightboxImg.src = src;
+    imageLightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    playKeyClick();
+  };
+
+  window.closeLightbox = function() {
+    imageLightbox.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => { lightboxImg.src = ''; }, 300);
+  };
+
+  imageLightbox.addEventListener('click', function() {
+    closeLightbox();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && imageLightbox.classList.contains('active')) {
+      closeLightbox();
+    }
+  });
+
+  // ============================================================
+  // ===== КНОПКА РАЗВЕРНУТЬ/СВЕРНУТЬ ОПИСАНИЕ ===================
+  // ============================================================
+  window.toggleDesc = function(btn) {
+    const wrapper = btn.closest('.implant-desc-wrapper');
+    if (!wrapper) return;
+    const shortSpan = wrapper.querySelector('.desc-short');
+    const fullSpan = wrapper.querySelector('.desc-full');
+    const isExpanded = btn.textContent.trim() === 'СВЕРНУТЬ';
+
+    if (isExpanded) {
+      shortSpan.style.display = '';
+      fullSpan.style.display = 'none';
+      btn.textContent = 'РАЗВЕРНУТЬ';
+    } else {
+      shortSpan.style.display = 'none';
+      fullSpan.style.display = '';
+      btn.textContent = 'СВЕРНУТЬ';
+    }
+    playKeyClick();
+  };
+
+  // ============================================================
+  // ===== ЗАГРУЗКА ТОВАРОВ С СЕРВЕРА (МЕРЧ) ====================
+  // ============================================================
+  async function loadImplants() {
+    try {
+      const url = currentFilter === 'all' 
+        ? '/api/merch' 
+        : '/api/merch?category=' + encodeURIComponent(currentFilter);
+      
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!data.success) {
+        implantsGrid.innerHTML = '<div style="color: var(--red); text-align: center; padding: 40px; grid-column: 1 / -1;">Ошибка загрузки данных</div>';
+        return;
+      }
+
+      allImplants = data.data.filter(item => Number(item.is_active) === 1);
+      renderImplants(allImplants);
+      renderComparisonTable(allImplants);
+    } catch (err) {
+      console.error('Ошибка:', err);
+      implantsGrid.innerHTML = '<div style="color: var(--red); text-align: center; padding: 40px; grid-column: 1 / -1;">Не удалось загрузить товары</div>';
+    }
+  }
+
+  // ============================================================
+  // ===== ХЕЛПЕР: экранирование HTML ===========================
+  // ============================================================
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ============================================================
+  // ===== РЕНДЕР КАРТОЧЕК ======================================
+  // ============================================================
+  function renderImplants(data) {
+    implantsGrid.innerHTML = '';
+
+    if (data.length === 0) {
+      implantsGrid.innerHTML = '<div style="color: rgba(255,255,255,0.5); text-align: center; padding: 40px; grid-column: 1 / -1;">Товары в этой категории не найдены</div>';
+      return;
+    }
+
+    data.forEach(item => {
+      // --- превью с кликом для лайтбокса ---
+      let previewHtml = '';
+      if (item.image_path) {
+        const safeSrc = escapeHtml(item.image_path);
+        previewHtml = `<div class="implant-preview">
+          <img src="${safeSrc}" alt="${escapeHtml(item.name)}" onclick="openLightbox(this.src)">
+        </div>`;
+      } else {
+        previewHtml = `<div class="implant-preview"><div class="placeholder-icon">◈</div></div>`;
+      }
+
+      // --- описание с обрезкой и кнопкой развернуть ---
+      const fullDesc = (item.description && String(item.description).trim()) || 'Описание отсутствует';
+      const isLong = fullDesc.length > DESC_LIMIT;
+      const shortDesc = isLong ? fullDesc.substring(0, DESC_LIMIT).trimEnd() + '…' : fullDesc;
+
+      const descWrapperHtml = `
+        <div class="implant-desc-wrapper">
+          <div class="implant-desc">
+            <span class="desc-short">${escapeHtml(shortDesc)}</span>
+            <span class="desc-full" style="display:none;">${escapeHtml(fullDesc)}</span>
+          </div>
+          ${isLong ? '<button type="button" class="implant-desc-toggle" onclick="toggleDesc(this)">РАЗВЕРНУТЬ</button>' : ''}
+        </div>
+      `;
+
+      const inStock = Number(item.stock) > 0;
+      const buyBtnHtml = inStock
+        ? `<button class="implant-buy-btn" onclick="openOrderModal(${item.id})">[ КУПИТЬ ]</button>`
+        : `<button class="implant-buy-btn" disabled>[ НЕТ В НАЛИЧИИ ]</button>`;
+
+      const card = document.createElement('div');
+      card.className = 'implant-card';
+      card.innerHTML = `
+        ${previewHtml}
+        <div class="implant-header">
+          <div>
+            <div class="implant-name">${escapeHtml(item.name)}</div>
+            <div class="implant-category">${escapeHtml(item.category || item.type || 'ТОВАР')}</div>
+          </div>
+        </div>
+        <div class="implant-price">${item.price || 0}</div>
+        ${descWrapperHtml}
+        ${item.sizes ? `<div class="implant-specs"><div class="spec-item"><span class="spec-label">Размеры:</span><span class="spec-value">${escapeHtml(item.sizes)}</span></div></div>` : ''}
+        <div class="verdict">${item.stock || 0} шт.</div>
+        ${buyBtnHtml}
+      `;
+      implantsGrid.appendChild(card);
+    });
+  }
+
+  function renderComparisonTable(data) {
+    comparisonTable.innerHTML = '';
+
+    if (data.length === 0) {
+      comparisonTable.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Нет данных для сравнения</td></tr>';
+      return;
+    }
+
+    data.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${escapeHtml(item.name)}</td>
+        <td>${escapeHtml(item.category || item.type || '—')}</td>
+        <td class="table-rating">★★★★★</td>
+        <td class="table-price">${item.price || 0} ₽</td>
+        <td style="color: ${item.stock > 0 ? 'var(--green)' : 'var(--red)'}; font-weight: bold;">${item.stock > 0 ? 'В НАЛИЧИИ' : 'НЕТ'}</td>
+      `;
+      comparisonTable.appendChild(row);
+    });
+  }
+
+  function filterImplants() {
+    let filtered = allImplants;
+    if (currentFilter !== 'all') {
+      filtered = allImplants.filter(i => (i.category === currentFilter || i.type === currentFilter));
+    }
+    renderImplants(filtered);
+    renderComparisonTable(filtered);
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      filterImplants();
+      playKeyClick();
+    });
+  });
+
+  // ============================================================
+  // ===== МОДАЛКА ЗАКАЗА =======================================
+  // ============================================================
+  const orderModal = document.getElementById('orderModal');
+  const orderForm = document.getElementById('orderForm');
+  const orderQty = document.getElementById('orderQty');
+  const orderSizeGroup = document.getElementById('orderSizeGroup');
+  const orderSizeSelect = document.getElementById('orderSize');
+  const orderTotal = document.getElementById('orderTotal');
+  const orderSubmitBtn = document.getElementById('orderSubmitBtn');
+  let orderCurrentMerch = null;
+
+  window.openOrderModal = function(merchId) {
+    const item = allImplants.find(m => Number(m.id) === Number(merchId));
+    if (!item) return;
+
+    if (Number(item.stock) <= 0) {
+      alert('Товара нет в наличии');
+      return;
+    }
+
+    orderCurrentMerch = item;
+
+    document.getElementById('orderMerchId').value = item.id;
+    document.getElementById('orderProductName').textContent =
+      item.name + '  //  ' + item.price + ' ₽  //  В наличии: ' + item.stock + ' шт.';
+
+    orderQty.value = 1;
+    orderQty.max = item.stock;
+
+    orderSizeSelect.innerHTML = '';
+    const sizesRaw = (item.sizes || '').trim();
+    if (sizesRaw) {
+      const sizes = sizesRaw.split(',').map(s => s.trim()).filter(Boolean);
+      if (sizes.length > 0) {
+        sizes.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          orderSizeSelect.appendChild(opt);
+        });
+        orderSizeGroup.style.display = '';
+      } else {
+        orderSizeGroup.style.display = 'none';
+      }
+    } else {
+      orderSizeGroup.style.display = 'none';
+    }
+
+    updateOrderTotal();
+    orderModal.classList.add('active');
+
+    setTimeout(() => document.getElementById('orderName').focus(), 100);
+    playKeyClick();
+  };
+
+  function updateOrderTotal() {
+    if (!orderCurrentMerch) return;
+    const qty = parseInt(orderQty.value) || 1;
+    const total = Number(orderCurrentMerch.price) * qty;
+    orderTotal.textContent = total + ' ₽';
+  }
+
+  orderQty.addEventListener('input', updateOrderTotal);
+
+  document.getElementById('orderModalClose').addEventListener('click', () => {
+    orderModal.classList.remove('active');
+  });
+
+  orderModal.addEventListener('click', (e) => {
+    if (e.target === orderModal) orderModal.classList.remove('active');
+  });
+
+  orderForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!orderCurrentMerch) return;
+
+    const qty = parseInt(orderQty.value) || 1;
+    if (qty < 1) { alert('Количество должно быть не менее 1'); return; }
+    if (qty > Number(orderCurrentMerch.stock)) {
+      alert('На складе только ' + orderCurrentMerch.stock + ' шт.');
+      return;
+    }
+
+    const payload = {
+      merch_id: Number(orderCurrentMerch.id),
+      name: document.getElementById('orderName').value.trim(),
+      phone: document.getElementById('orderPhone').value.trim(),
+      email: document.getElementById('orderEmail').value.trim(),
+      quantity: qty,
+      size: orderSizeGroup.style.display !== 'none' ? orderSizeSelect.value : ''
+    };
+
+    if (!payload.name || !payload.phone || !payload.email) {
+      alert('Заполните все обязательные поля');
+      return;
+    }
+
+    orderSubmitBtn.disabled = true;
+    orderSubmitBtn.textContent = '[ ОТПРАВКА... ]';
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        playSuccessSound();
+        alert('✓ Заказ #' + data.order_id + ' успешно оформлен!\n\nМы свяжемся с вами в ближайшее время по указанным контактам.');
+        orderModal.classList.remove('active');
+        orderForm.reset();
+        orderCurrentMerch = null;
+        loadImplants();
+      } else {
+        alert('Ошибка: ' + (data.error || 'не удалось оформить заказ'));
+      }
+    } catch (err) {
+      alert('Ошибка: ' + err.message);
+    } finally {
+      orderSubmitBtn.disabled = false;
+      orderSubmitBtn.textContent = '[ ОТПРАВИТЬ ]';
+    }
+  });
+
+  // ============================================================
+  // ===== ПАНЕЛИ МЕНЮ ==========================================
+  // ============================================================
+
+  function typeWriter(text, element, speed = 70) {
+    return new Promise(resolve => {
+      element.textContent = '';
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          playKeyClick();
+          i++;
+          const delay = speed + (Math.random() - 0.5) * 40;
+          typeWriterTimer = setTimeout(type, delay);
+        } else {
+          resolve();
+        }
+      }
+      type();
+    });
+  }
+
+  function openPanel(mode, title) {
+    currentMode = mode;
+    panelMode.textContent = `MODE: ${mode}`;
+    panelTitle.textContent = title;
+    
+    statusLines.forEach(line => line.classList.remove('visible'));
+    statusTimers.forEach(t => clearTimeout(t));
+    statusTimers = [];
+    implantChoice.classList.remove('visible');
+    uplinkContent.classList.remove('visible');
+    
+    sidePanel.classList.add('open');
+    if (typeWriterTimer) clearTimeout(typeWriterTimer);
+    
+    const uplinkMessage = mode === 'UPLINK' ? 'Канал связи открыт' : 'Имплантат активирован';
+    
+    typeWriter(uplinkMessage, typewriterText, 80).then(() => {
+      statusLines.forEach(line => {
+        const delay = parseInt(line.dataset.delay);
+        const timer = setTimeout(() => {
+          line.classList.add('visible');
+          playKeyClick();
+        }, delay);
+        statusTimers.push(timer);
+      });
+
+      setTimeout(() => {
+        if (mode === 'UPLINK') {
+          uplinkContent.classList.add('visible');
+        } else {
+          implantChoice.classList.add('visible');
+        }
+      }, 1200);
+    });
+  }
+
+  function closePanel() {
+    sidePanel.classList.remove('open');
+    if (typeWriterTimer) clearTimeout(typeWriterTimer);
+    statusTimers.forEach(t => clearTimeout(t));
+    statusTimers = [];
+    implantChoice.classList.remove('visible');
+    uplinkContent.classList.remove('visible');
+  }
+
+  panelClose.addEventListener('click', () => {
+    playKeyClick();
+    closePanel();
+  });
+  
+  btnNo.addEventListener('click', () => {
+    playKeyClick();
+    closePanel();
+  });
+
+  btnYes.addEventListener('click', () => {
+    playSuccessSound();
+    
+    const titles = {
+      'HUB': 'ЦЕНТРАЛЬНЫЙ ХАБ',
+      'STREAM': 'ПОТОК ДАННЫХ',
+      'MANIFEST': 'МАНИФЕСТ',
+      'LOGS': 'АРХИВ ЛОГОВ',
+      'MATRIX': 'МАТРИЦА ОБРАЗОВ',
+      'ACCESS': 'УРОВЕНЬ ДОСТУПА',
+      'RIPPER': 'РИППЕРДОК-КЛИНИКА',
+      'COG': 'КОГНИТИВНЫЙ ФИД',
+      'IMPLANT': 'КАТАЛОГ ИМПЛАНТАТОВ',
+      'UPLINK': 'АПЛИНК-КАНАЛ'
+    };
+    
+    const modeToUrl = {
+      'HUB': '/hub',
+      'STREAM': '/stream',
+      'MANIFEST': '/manifest',
+      'LOGS': '/logs',
+      'MATRIX': '/matrix',
+      'ACCESS': '/access',
+      'RIPPER': '/ripper',
+      'COG': '/cog',
+      'IMPLANT': '/implant',
+      'UPLINK': null
+    };
+
+    transitionText.textContent = `ЗАГРУЗКА: ${titles[currentMode] || 'МОДУЛЬ'}...`;
+    transitionOverlay.classList.add('active');
+    
+    setTimeout(() => { progressFill.style.width = '100%'; }, 100);
+
+    setTimeout(() => {
+      transitionOverlay.classList.remove('active');
+      progressFill.style.width = '0%';
+      closePanel();
+      
+      const targetUrl = modeToUrl[currentMode];
+      if (targetUrl) {
+        window.location.href = targetUrl;
+      }
+    }, 1500);
+  });
+
+  const menuItems = document.querySelectorAll('.menu-item');
+  const menuTitles = {
+    'HUB': 'Центральный хаб',
+    'STREAM': 'Поток данных',
+    'MANIFEST': 'Манифест системы',
+    'LOGS': 'Архив логов',
+    'MATRIX': 'Матрица образов',
+    'ACCESS': 'Уровень доступа',
+    'RIPPER': 'Риппердок-клиника',
+    'COG': 'Когнитивный фид',
+    'IMPLANT': 'Каталог имплантатов',
+    'UPLINK': 'Аплинк-канал'
+  };
+
+  menuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      playKeyClick();
+      
+      const mode = item.dataset.mode.toUpperCase();
+      if (mode === 'RIPPER') {
+        closePanel();
+        return;
+      }
+      openPanel(mode, menuTitles[mode] || 'Инициализация');
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target === panelClose || e.target === btnNo || e.target === btnYes || e.target === soundBtn) return;
+    if (!sidePanel.contains(e.target) && !e.target.closest('.menu-item')) {
+      closePanel();
+    }
+  });
+
+  loadImplants();
+</script>
+<script src="/js/navigation.js"></script>
+<script src="/js/user-nav.js"></script>
+</body>
+</html>

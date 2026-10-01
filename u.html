@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBERPUNK // ПРОФИЛЬ</title>
+<style>
+  :root {
+    --cyan: #00ffff; --magenta: #ff00ff; --yellow: #ffcc00; --green: #00ff00; --red: #ff0040;
+    --bg-dark: #05060a; --bg-panel: rgba(5, 6, 10, 0.9); --font-mono: 'Courier New', Courier, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg-dark); color: var(--cyan); font-family: var(--font-mono); overflow-x: hidden; min-height: 100vh; }
+  body::after { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0) 4px); pointer-events: none; z-index: 999; }
+
+  .menu { position: fixed; top: 0; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 15px 25px; z-index: 100; padding: 15px 25px; background: rgba(5, 6, 10, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0, 255, 255, 0.2); max-width: 95vw; }
+  .menu-item { position: relative; padding: 6px 12px 6px 22px; font-size: 11px; letter-spacing: 1.5px; color: var(--cyan); text-transform: uppercase; cursor: pointer; transition: color 0.2s; white-space: nowrap; text-decoration: none; }
+  .menu-item:hover { color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+  .menu-item.active { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 100px 20px 60px; }
+
+  .profile-card { background: var(--bg-panel); border: 1px solid rgba(0,255,255,0.3); border-left: 4px solid var(--cyan); padding: 40px; position: relative; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%); box-shadow: 0 0 30px rgba(0,255,255,0.15); }
+
+  .avatar { width: 140px; height: 140px; border-radius: 50%; border: 3px solid var(--cyan); box-shadow: 0 0 30px rgba(0,255,255,0.5); object-fit: cover; display: block; margin: 0 auto 20px; background: rgba(0,0,0,0.5); }
+  .avatar-placeholder { width: 140px; height: 140px; border-radius: 50%; border: 3px dashed rgba(0,255,255,0.5); background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 56px; color: rgba(0,255,255,0.4); margin: 0 auto 20px; }
+
+  .username { font-size: 32px; letter-spacing: 4px; color: #fff; text-align: center; text-shadow: 0 0 15px rgba(0,255,255,0.6); margin-bottom: 8px; }
+  .role-badge { display: inline-block; padding: 5px 15px; border: 1px solid var(--cyan); color: var(--cyan); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+  .role-badge.role-admin { color: var(--magenta); border-color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+  .role-badge.role-operator { color: var(--yellow); border-color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
+  .role-badge.role-subscriber { color: var(--green); border-color: var(--green); text-shadow: 0 0 8px var(--green); }
+
+  .bio { font-size: 13px; line-height: 1.8; color: rgba(255,255,255,0.8); text-align: center; margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.4); border-left: 3px solid var(--magenta); }
+
+  .meta { font-size: 12px; color: rgba(255,255,255,0.5); text-align: center; letter-spacing: 2px; margin-top: 10px; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
+  .stat-box { background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); padding: 20px; text-align: center; }
+  .stat-box .num { font-size: 28px; color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
+  .stat-box .lbl { font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.6); margin-top: 8px; text-transform: uppercase; }
+
+  .back-link { display: inline-block; margin-top: 30px; padding: 10px 20px; color: var(--cyan); border: 1px solid var(--cyan); text-decoration: none; font-size: 11px; letter-spacing: 2px; transition: all 0.2s; }
+  .back-link:hover { background: rgba(0,255,255,0.1); box-shadow: 0 0 15px rgba(0,255,255,0.5); }
+
+  .error-block { text-align: center; padding: 60px 20px; }
+  .error-block .code { font-size: 80px; color: var(--red); text-shadow: 0 0 25px var(--red); margin-bottom: 20px; }
+  .error-block .text { font-size: 14px; letter-spacing: 3px; color: rgba(255,255,255,0.6); }
+</style>
+</head>
+<body>
+
+<nav class="menu">
+  <a href="/hub" class="menu-item">Центральный_хаб</a>
+  <a href="/stream" class="menu-item">Поток_данных</a>
+  <a href="/manifest" class="menu-item">Манифест</a>
+  <a href="/logs" class="menu-item">Логи</a>
+  <a href="/matrix" class="menu-item">Матрица_образов</a>
+  <a href="/access" class="menu-item">Доступ</a>
+  <a href="/ripper" class="menu-item">Риппердок</a>
+  <a href="/cog" class="menu-item">Когнитивный_фид</a>
+  <a href="/implant" class="menu-item">Имплантаты</a>
+</nav>
+
+<main class="container" id="content">
+  <div class="profile-card" style="text-align: center;">
+    <div class="meta">Загрузка профиля...</div>
+  </div>
+</main>
+
+<script>
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function fmtDate(raw) {
+    if (!raw) return '—';
+    const d = new Date(raw.replace(' ', 'T'));
+    return isNaN(d) ? raw : d.toLocaleDateString('ru-RU');
+  }
+
+  // Извлекаем username из URL: /user/:username
+  const parts = window.location.pathname.split('/');
+  const username = parts[parts.length - 1];
+
+  async function load() {
+    const content = document.getElementById('content');
+    if (!username) {
+      content.innerHTML = `<div class="error-block"><div class="code">404</div><div class="text">ПОЛЬЗОВАТЕЛЬ НЕ НАЙДЕН</div></div>`;
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/user/public/' + encodeURIComponent(username));
+      const data = await res.json();
+
+      if (!data.success) {
+        content.innerHTML = `<div class="error-block"><div class="code">404</div><div class="text">ПОЛЬЗОВАТЕЛЬ НЕ НАЙДЕН</div></div>`;
+        return;
+      }
+
+      const u = data.data;
+      const avatarHtml = u.avatar
+        ? `<img src="${escapeHtml(u.avatar)}" alt="avatar" class="avatar">`
+        : `<div class="avatar-placeholder">◉</div>`;
+
+      const bioHtml = u.bio
+        ? `<div class="bio">${escapeHtml(u.bio)}</div>`
+        : `<div class="bio" style="color: rgba(255,255,255,0.35);">// нет описания</div>`;
+
+      content.innerHTML = `
+        <div class="profile-card" style="text-align: center;">
+          ${avatarHtml}
+          <div class="username">${escapeHtml(u.username)}</div>
+          <div class="role-badge role-${u.role}">${u.role.toUpperCase()}</div>
+          ${bioHtml}
+          <div class="meta">В СИСТЕМЕ С ${fmtDate(u.created_at)}</div>
+
+          <div class="stats">
+            <div class="stat-box"><div class="num">${u.stats.comments}</div><div class="lbl">Комментарии</div></div>
+            <div class="stat-box"><div class="num">${u.stats.posts}</div><div class="lbl">Посты</div></div>
+          </div>
+
+          <a href="/cog" class="back-link">[ ВЕРНУТЬСЯ К ФИДУ ]</a>
+        </div>
+      `;
+
+      document.title = 'CYBERPUNK // ' + u.username.toUpperCase();
+    } catch (e) {
+      content.innerHTML = `<div class="error-block"><div class="code">500</div><div class="text">ОШИБКА СЕРВЕРА</div></div>`;
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

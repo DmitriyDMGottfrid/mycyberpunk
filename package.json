@@ -1,0 +1,20 @@
+{
+  "name": "cyberpunk-drive",
+  "version": "1.0.0",
+  "description": "Cyberpunk CMS Engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sql.js": "^1.10.3",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7",
+    "image-size": "^1.1.1"
+  }
+}

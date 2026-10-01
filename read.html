@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ЧИТАЛКА</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<style>
+  :root {
+    --accent: #00e5ff;
+    --accent-2: #ff00ff;
+    --accent-3: #ffcc00;
+    --bg: #05060a;
+    --bg-panel: rgba(5, 6, 10, 0.96);
+    --font-ui: 'Courier New', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--accent);
+    font-family: var(--font-ui);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .reader-header {
+    flex: 0 0 auto;
+    height: 56px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid rgba(0, 229, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+    transition: transform 0.25s, opacity 0.25s;
+  }
+
+  .reader-header.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .reader-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #fff;
+    max-width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .reader-title::before { content: '◈ '; color: var(--accent-2); }
+
+  .reader-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .ctrl-btn {
+    padding: 8px 12px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .ctrl-btn:hover {
+    background: rgba(0, 229, 255, 0.12);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+  }
+  .ctrl-btn.magenta { border-color: var(--accent-2); color: var(--accent-2); }
+  .ctrl-btn.magenta:hover { background: rgba(255,0,255,0.12); box-shadow: 0 0 12px rgba(255,0,255,0.4); }
+  .ctrl-btn.yellow { border-color: var(--accent-3); color: var(--accent-3); }
+  .ctrl-btn.yellow:hover { background: rgba(255,204,0,0.12); box-shadow: 0 0 12px rgba(255,204,0,0.4); }
+  .ctrl-btn.green { border-color: #00e676; color: #00e676; }
+  .ctrl-btn.green:hover { background: rgba(0,230,118,0.12); }
+
+  .reader-stage {
+    flex: 1 1 auto;
+    position: relative;
+    min-height: 0;
+    background: #0a0a0a;
+  }
+
+  .reader-stage .inner {
+    max-width: 760px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+  }
+
+  #viewer {
+    width: 100%;
+    height: 100%;
+  }
+
+  .click-zone {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 15%;
+    cursor: pointer;
+    z-index: 5;
+  }
+  .click-zone.left { left: 0; }
+  .click-zone.right { right: 0; }
+  @media (max-width: 768px) {
+    .click-zone { width: 20%; }
+  }
+
+  .animation-zone {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    width: 200px;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity 0.3s;
+  }
+
+  .animation-zone.left { left: 0; }
+  .animation-zone.right { right: 0; }
+
+  .animation-zone canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .animation-zone.disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1200px) {
+    .animation-zone { display: none; }
+  }
+
+  .reader-nav {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 100;
+    background: var(--bg-panel);
+    padding: 8px 14px;
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    border-radius: 2px;
+    transition: transform 0.25s, opacity 0.25s;
+  }
+  .reader-nav.hidden {
+    transform: translateX(-50%) translateY(150%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: rgba(0,229,255,0.15); box-shadow: 0 0 10px rgba(0,229,255,0.4); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .page-info {
+    font-size: 11px;
+    color: var(--accent-3);
+    letter-spacing: 1px;
+    min-width: 90px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 340px;
+    max-width: 90vw;
+    background: var(--bg-panel);
+    z-index: 200;
+    overflow-y: auto;
+    padding: 24px 20px;
+    transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-left {
+    left: 0;
+    border-right: 1px solid rgba(255,0,255,0.5);
+    transform: translateX(-100%);
+  }
+  .panel-left.open { transform: translateX(0); }
+  .panel-right {
+    right: 0;
+    border-left: 1px solid rgba(255,204,0,0.5);
+    transform: translateX(100%);
+  }
+  .panel-right.open { transform: translateX(0); }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .panel-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .panel-left .panel-title { color: var(--accent-2); }
+  .panel-right .panel-title { color: var(--accent-3); }
+
+  .close-btn {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .panel-left .close-btn { color: var(--accent-2); }
+  .panel-right .close-btn { color: var(--accent-3); }
+  .close-btn:hover { background: rgba(255,255,255,0.08); }
+
+  .toc-list { list-style: none; }
+  .toc-item {
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #c0c0c0;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    line-height: 1.4;
+    transition: all 0.15s;
+  }
+  .toc-item:hover {
+    background: rgba(0,229,255,0.06);
+    border-left-color: var(--accent);
+    color: #fff;
+  }
+  .toc-item.active {
+    background: rgba(0,229,255,0.1);
+    border-left-color: var(--accent);
+    color: var(--accent-3);
+  }
+  .toc-sublist {
+    list-style: none;
+    padding-left: 14px;
+  }
+  .toc-sublist .toc-item {
+    font-size: 11px;
+    padding: 7px 12px;
+    color: #9a9a9a;
+  }
+  .toc-empty {
+    color: #666;
+    font-size: 12px;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  .setting-group { margin-bottom: 24px; }
+  .setting-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent-2);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .setting-label::before { content: '> '; color: var(--accent); }
+
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step-btn {
+    width: 38px;
+    height: 38px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .step-btn:hover { background: rgba(0,229,255,0.15); }
+  .step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .step-value {
+    font-size: 14px;
+    color: var(--accent-3);
+    min-width: 60px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .theme-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .theme-btn {
+    padding: 12px 6px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 1px;
+    border: 1px solid #333;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    background: #1a1a1a;
+    color: #888;
+  }
+  .theme-btn[data-theme="light"] { background: #f5f5f5; color: #333; border-color: #ccc; }
+  .theme-btn[data-theme="sepia"] { background: #f4ecd8; color: #6b4f2a; border-color: #d4a017; }
+  .theme-btn[data-theme="dark"] { background: #121212; color: #c0c0c0; border-color: #333; }
+  .theme-btn.active {
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .toggle-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+  .toggle-label {
+    font-size: 12px;
+    color: #c0c0c0;
+  }
+  .toggle-input {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    appearance: none;
+    background: #333;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background 0.3s;
+    outline: none;
+  }
+  .toggle-input:checked { background: var(--accent); }
+  .toggle-input::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+  .toggle-input:checked::before { transform: translateX(24px); }
+
+  .animation-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .anim-btn {
+    padding: 10px 6px;
+    font-family: var(--font-ui);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    border: 1px solid #333;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    background: #1a1a1a;
+    color: #888;
+    text-align: center;
+  }
+  .anim-btn:hover { background: #252525; color: #fff; }
+  .anim-btn.active {
+    box-shadow: 0 0 0 2px var(--accent);
+    background: rgba(0,229,255,0.1);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .error-message {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #ff0040;
+    text-align: center;
+    padding: 40px;
+  }
+  .error-title {
+    font-size: 20px;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .error-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 190;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+
+  @media (max-width: 768px) {
+    .reader-header { padding: 0 12px; height: 52px; }
+    .reader-title { font-size: 11px; max-width: 40%; }
+    .ctrl-btn { padding: 7px 9px; font-size: 10px; }
+    .ctrl-btn .label { display: none; }
+    .reader-stage .inner { padding: 0 12px; }
+    .panel { width: 100%; max-width: 100%; }
+    .reader-nav { bottom: 12px; padding: 6px 10px; }
+  }
+
+  @media (min-width: 769px) {
+    .ctrl-btn .label-short { display: none; }
+  }
+  @media (max-width: 768px) {
+    .ctrl-btn .label-long { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="reader-header" id="header">
+  <div class="reader-title" id="bookTitle">ЗАГРУЗКА...</div>
+  <div class="reader-controls">
+    <a href="/logs" class="ctrl-btn"><span class="label-long">[ НАЗАД ]</span><span class="label-short">←</span></a>
+    <button class="ctrl-btn magenta" id="tocBtn"><span class="label-long">[ СОДЕРЖАНИЕ ]</span><span class="label-short">☰</span></button>
+    <button class="ctrl-btn yellow" id="settingsBtn"><span class="label-long">[ НАСТРОЙКИ ]</span><span class="label-short"></span></button>
+    <a href="#" class="ctrl-btn green" id="downloadBtn" download><span class="label-long">[ СКАЧАТЬ ]</span><span class="label-short">↓</span></a>
+  </div>
+</header>
+
+<div class="reader-stage" id="stage">
+  <div class="inner">
+    <div id="viewer"></div>
+    <div class="click-zone left" id="clickLeft"></div>
+    <div class="click-zone right" id="clickRight"></div>
+  </div>
+  <div class="reader-nav hidden" id="readerNav">
+    <button class="nav-btn" id="prevBtn" title="Назад">◄</button>
+    <div class="page-info" id="pageInfo">— / —</div>
+    <button class="nav-btn" id="nextBtn" title="Вперёд">►</button>
+  </div>
+</div>
+
+<div class="animation-zone left" id="animLeft">
+  <canvas id="canvasLeft"></canvas>
+</div>
+<div class="animation-zone right" id="animRight">
+  <canvas id="canvasRight"></canvas>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<aside class="panel panel-left" id="tocPanel">
+  <div class="panel-header">
+    <div class="panel-title">Содержание</div>
+    <button class="close-btn" id="tocClose">✕</button>
+  </div>
+  <ul class="toc-list" id="tocList"></ul>
+</aside>
+
+<aside class="panel panel-right" id="settingsPanel">
+  <div class="panel-header">
+    <div class="panel-title">Настройки</div>
+    <button class="close-btn" id="settingsClose">✕</button>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Размер шрифта</div>
+    <div class="stepper">
+      <button class="step-btn" id="fontDecrease">−</button>
+      <div class="step-value" id="fontSizeValue">100%</div>
+      <button class="step-btn" id="fontIncrease">+</button>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Межстрочный интервал</div>
+    <div class="stepper">
+      <button class="step-btn" id="lineDecrease">−</button>
+      <div class="step-value" id="lineHeightValue">1.6</div>
+      <button class="step-btn" id="lineIncrease">+</button>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Ширина колонки</div>
+    <div class="stepper">
+      <button class="step-btn" id="widthDecrease">−</button>
+      <div class="step-value" id="widthValue">760</div>
+      <button class="step-btn" id="widthIncrease">+</button>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Тема</div>
+    <div class="theme-options">
+      <button class="theme-btn active" data-theme="dark">Тёмная</button>
+      <button class="theme-btn" data-theme="light">Светлая</button>
+      <button class="theme-btn" data-theme="sepia">Сепия</button>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Анимация фона</div>
+    <div class="toggle-switch">
+      <span class="toggle-label">Включить</span>
+      <input type="checkbox" class="toggle-input" id="animToggle" checked>
+    </div>
+  </div>
+
+  <div class="setting-group">
+    <div class="setting-label">Тип анимации</div>
+    <div class="animation-selector" id="animSelector">
+      <button class="anim-btn active" data-anim="matrix">Матрица</button>
+      <button class="anim-btn" data-anim="dna">ДНК</button>
+      <button class="anim-btn" data-anim="neural">Нейросеть</button>
+      <button class="anim-btn" data-anim="binary">Бинарный</button>
+      <button class="anim-btn" data-anim="glitch">Глитч</button>
+      <button class="anim-btn" data-anim="stars">Звёзды</button>
+      <button class="anim-btn" data-anim="tron">Трон</button>
+      <button class="anim-btn" data-anim="wave">Волны</button>
+      <button class="anim-btn" data-anim="particles">Частицы</button>
+    </div>
+  </div>
+</aside>
+
+<script>
+(() => {
+  'use strict';
+
+  const THEMES = {
+    dark:  { bg: '#0a0a0a', text: '#d0d0d0', link: '#00e5ff' },
+    light: { bg: '#ffffff', text: '#1a1a1a', link: '#0066cc' },
+    sepia: { bg: '#f4ecd8', text: '#4a3b28', link: '#8b6914' }
+  };
+
+  const FONT_MIN = 70, FONT_MAX = 200, FONT_STEP = 10;
+  const LINE_MIN = 1.2, LINE_MAX = 2.4, LINE_STEP = 0.1;
+  const WIDTH_MIN = 480, WIDTH_MAX = 1000, WIDTH_STEP = 40;
+
+  const DEFAULTS = {
+    fontSize: 100,
+    lineHeight: 1.6,
+    columnWidth: 760,
+    theme: 'dark',
+    animEnabled: true,
+    animType: 'matrix'
+  };
+
+  const params = new URLSearchParams(location.search);
+  const bookId = params.get('id');
+
+  let book = null;
+  let rendition = null;
+  let settings = loadSettings();
+  let saveTimer = null;
+  let animFrameId = null;
+  let currentAnimType = settings.animType;
+
+  const $ = (id) => document.getElementById(id);
+
+  const header = $('header');
+  const stage = $('stage');
+  const viewer = $('viewer');
+  const innerStage = document.querySelector('.reader-stage .inner');
+  const bookTitleEl = $('bookTitle');
+  const downloadBtn = $('downloadBtn');
+  const readerNav = $('readerNav');
+  const prevBtn = $('prevBtn');
+  const nextBtn = $('nextBtn');
+  const pageInfo = $('pageInfo');
+  const clickLeft = $('clickLeft');
+  const clickRight = $('clickRight');
+
+  const tocBtn = $('tocBtn');
+  const tocClose = $('tocClose');
+  const tocPanel = $('tocPanel');
+  const tocList = $('tocList');
+
+  const settingsBtn = $('settingsBtn');
+  const settingsClose = $('settingsClose');
+  const settingsPanel = $('settingsPanel');
+
+  const fontDecrease = $('fontDecrease');
+  const fontIncrease = $('fontIncrease');
+  const fontSizeValue = $('fontSizeValue');
+  const lineDecrease = $('lineDecrease');
+  const lineIncrease = $('lineIncrease');
+  const lineHeightValue = $('lineHeightValue');
+  const widthDecrease = $('widthDecrease');
+  const widthIncrease = $('widthIncrease');
+  const widthValue = $('widthValue');
+  const animToggle = $('animToggle');
+  const animSelector = $('animSelector');
+
+  const overlay = $('overlay');
+
+  function settingsKey() {
+    return `reader:settings:${bookId || 'default'}`;
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(`reader:settings:${bookId || 'default'}`);
+      if (!raw) return { ...DEFAULTS };
+      const parsed = JSON.parse(raw);
+      return {
+        fontSize: clamp(parsed.fontSize ?? DEFAULTS.fontSize, FONT_MIN, FONT_MAX),
+        lineHeight: clamp(parsed.lineHeight ?? DEFAULTS.lineHeight, LINE_MIN, LINE_MAX),
+        columnWidth: clamp(parsed.columnWidth ?? DEFAULTS.columnWidth, WIDTH_MIN, WIDTH_MAX),
+        theme: THEMES[parsed.theme] ? parsed.theme : DEFAULTS.theme,
+        animEnabled: parsed.animEnabled !== undefined ? parsed.animEnabled : DEFAULTS.animEnabled,
+        animType: parsed.animType || DEFAULTS.animType
+      };
+    } catch {
+      return { ...DEFAULTS };
+    }
+  }
+
+  function persistSettings() {
+    try {
+      localStorage.setItem(settingsKey(), JSON.stringify(settings));
+    } catch (e) {
+      console.warn('Не удалось сохранить настройки', e);
+    }
+  }
+
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, v));
+  }
+
+  function positionKey() {
+    return `reader:pos:${bookId}`;
+  }
+
+  function savePosition(cfi) {
+    if (!cfi) return;
+    try {
+      localStorage.setItem(positionKey(), cfi);
+    } catch {}
+  }
+
+  function loadSavedPosition() {
+    try {
+      return localStorage.getItem(positionKey());
+    } catch {
+      return null;
+    }
+  }
+
+  function showOverlay() { overlay.classList.add('show'); }
+  function hideOverlay() { overlay.classList.remove('show'); }
+
+  function closePanels() {
+    tocPanel.classList.remove('open');
+    settingsPanel.classList.remove('open');
+    hideOverlay();
+  }
+
+  let autoHideTimer = null;
+
+  function scheduleAutoHide() {
+    clearTimeout(autoHideTimer);
+    header.classList.remove('hidden');
+    readerNav.classList.remove('hidden');
+    autoHideTimer = setTimeout(() => {
+      if (tocPanel.classList.contains('open') || settingsPanel.classList.contains('open')) return;
+      header.classList.add('hidden');
+      readerNav.classList.add('hidden');
+    }, 3000);
+  }
+
+  function forceShowUI() {
+    clearTimeout(autoHideTimer);
+    header.classList.remove('hidden');
+    readerNav.classList.remove('hidden');
+  }
+
+  ['mousemove', 'touchstart', 'keydown'].forEach(evt => {
+    document.addEventListener(evt, scheduleAutoHide, { passive: true });
+  });
+
+  function updateSettingsUI() {
+    fontSizeValue.textContent = settings.fontSize + '%';
+    lineHeightValue.textContent = settings.lineHeight.toFixed(1);
+    widthValue.textContent = settings.columnWidth + 'px';
+    animToggle.checked = settings.animEnabled;
+
+    fontDecrease.disabled = settings.fontSize <= FONT_MIN;
+    fontIncrease.disabled = settings.fontSize >= FONT_MAX;
+    lineDecrease.disabled = settings.lineHeight <= LINE_MIN;
+    lineIncrease.disabled = settings.lineHeight >= LINE_MAX;
+    widthDecrease.disabled = settings.columnWidth <= WIDTH_MIN;
+    widthIncrease.disabled = settings.columnWidth >= WIDTH_MAX;
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === settings.theme);
+    });
+
+    document.querySelectorAll('.anim-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.anim === settings.animType);
+    });
+  }
+
+  function applyColumnWidth() {
+    innerStage.style.maxWidth = settings.columnWidth + 'px';
+  }
+
+  function applyTheme() {
+    if (!rendition) return;
+    rendition.themes.select(settings.theme);
+  }
+
+  function applyTypography() {
+    if (!rendition) return;
+    rendition.themes.fontSize(settings.fontSize + '%');
+    updateIframeStyles();
+  }
+
+  function updateIframeStyles() {
+    if (!rendition) return;
+    const contents = rendition.getContents();
+    if (!contents) return;
+
+    contents.forEach(content => {
+      const doc = content.document;
+      if (!doc) return;
+
+      let styleEl = doc.getElementById('reader-injected-style');
+      if (!styleEl) {
+        styleEl = doc.createElement('style');
+        styleEl.id = 'reader-injected-style';
+        doc.head.appendChild(styleEl);
+      }
+
+      const t = THEMES[settings.theme];
+      styleEl.textContent = `
+        html, body { line-height: ${settings.lineHeight} !important; }
+        p, li, div, blockquote, td, th { line-height: ${settings.lineHeight} !important; }
+        p { margin: 0 0 1em 0 !important; text-align: justify !important; hyphens: auto !important; -webkit-hyphens: auto !important; }
+        a { color: ${t.link} !important; }
+        img { max-width: 100% !important; height: auto !important; }
+      `;
+    });
+  }
+
+  fontDecrease.addEventListener('click', () => {
+    settings.fontSize = clamp(settings.fontSize - FONT_STEP, FONT_MIN, FONT_MAX);
+    updateSettingsUI(); persistSettings(); applyTypography();
+  });
+  fontIncrease.addEventListener('click', () => {
+    settings.fontSize = clamp(settings.fontSize + FONT_STEP, FONT_MIN, FONT_MAX);
+    updateSettingsUI(); persistSettings(); applyTypography();
+  });
+
+  lineDecrease.addEventListener('click', () => {
+    settings.lineHeight = Math.round(clamp(settings.lineHeight - LINE_STEP, LINE_MIN, LINE_MAX) * 10) / 10;
+    updateSettingsUI(); persistSettings(); updateIframeStyles();
+  });
+  lineIncrease.addEventListener('click', () => {
+    settings.lineHeight = Math.round(clamp(settings.lineHeight + LINE_STEP, LINE_MIN, LINE_MAX) * 10) / 10;
+    updateSettingsUI(); persistSettings(); updateIframeStyles();
+  });
+
+  widthDecrease.addEventListener('click', () => {
+    settings.columnWidth = clamp(settings.columnWidth - WIDTH_STEP, WIDTH_MIN, WIDTH_MAX);
+    updateSettingsUI(); persistSettings(); applyColumnWidth();
+  });
+  widthIncrease.addEventListener('click', () => {
+    settings.columnWidth = clamp(settings.columnWidth + WIDTH_STEP, WIDTH_MIN, WIDTH_MAX);
+    updateSettingsUI(); persistSettings(); applyColumnWidth();
+  });
+
+  animToggle.addEventListener('change', () => {
+    settings.animEnabled = animToggle.checked;
+    persistSettings();
+    applyAnimVisibility();
+  });
+
+  document.querySelectorAll('.anim-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settings.animType = btn.dataset.anim;
+      currentAnimType = settings.animType;
+      updateSettingsUI();
+      persistSettings();
+      initAnimations();
+    });
+  });
+
+  function applyAnimVisibility() {
+    const zones = document.querySelectorAll('.animation-zone');
+    zones.forEach(zone => {
+      if (settings.animEnabled) {
+        zone.classList.remove('disabled');
+      } else {
+        zone.classList.add('disabled');
+      }
+    });
+  }
+
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settings.theme = btn.dataset.theme;
+      updateSettingsUI(); persistSettings(); applyTheme();
+      setTimeout(updateIframeStyles, 50);
+    });
+  });
+
+  tocBtn.addEventListener('click', () => {
+    const open = tocPanel.classList.toggle('open');
+    settingsPanel.classList.remove('open');
+    open ? showOverlay() : hideOverlay();
+    forceShowUI();
+  });
+  tocClose.addEventListener('click', closePanels);
+
+  settingsBtn.addEventListener('click', () => {
+    const open = settingsPanel.classList.toggle('open');
+    tocPanel.classList.remove('open');
+    open ? showOverlay() : hideOverlay();
+    forceShowUI();
+  });
+  settingsClose.addEventListener('click', closePanels);
+
+  overlay.addEventListener('click', closePanels);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePanels();
+    else if (e.key === 'ArrowLeft' && rendition) rendition.prev();
+    else if (e.key === 'ArrowRight' && rendition) rendition.next();
+  });
+
+  prevBtn.addEventListener('click', () => rendition && rendition.prev());
+  nextBtn.addEventListener('click', () => rendition && rendition.next());
+  clickLeft.addEventListener('click', () => rendition && rendition.prev());
+  clickRight.addEventListener('click', () => rendition && rendition.next());
+
+  if (!bookId) {
+    renderError('ОШИБКА', 'Книга не указана');
+  } else {
+    updateSettingsUI();
+    applyColumnWidth();
+    applyAnimVisibility();
+    loadBook(bookId);
+    scheduleAutoHide();
+  }
+
+  function renderError(title, text) {
+    viewer.innerHTML = `<div class="error-message"><div class="error-title">${escapeHtml(title)}</div><div class="error-text">${escapeHtml(text)}</div></div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+  }
+
+  async function loadBook(id) {
+    try {
+      const res = await fetch('/api/books/' + encodeURIComponent(id));
+      const data = await res.json();
+
+      if (!data.success) {
+        renderError('ОШИБКА ЗАГРУЗКИ', 'Книга не найдена');
+        return;
+      }
+
+      const info = data.data;
+      bookTitleEl.textContent = info.title || 'Без названия';
+      document.title = (info.title || 'Читалка');
+
+      if (!info.file_path) {
+        renderError('НЕТ ФАЙЛА', 'Файл книги не загружен');
+        return;
+      }
+
+      downloadBtn.href = info.file_path;
+      const ext = (info.file_type || info.file_path.split('.').pop() || '').toLowerCase();
+
+      if (ext === 'epub') loadEpub(info.file_path);
+      else if (ext === 'pdf') viewer.innerHTML = `<iframe src="${encodeURI(info.file_path)}" style="width:100%;height:100%;border:none;background:#fff;"></iframe>`;
+      else if (ext === 'txt') await loadTxt(info.file_path);
+      else renderError('ФОРМАТ НЕ ПОДДЕРЖИВАЕТСЯ', 'Формат: ' + ext);
+    } catch (err) {
+      console.error(err);
+      renderError('ОШИБКА', 'Не удалось загрузить книгу');
+    }
+  }
+
+  async function loadTxt(url) {
+    try {
+      const res = await fetch(url);
+      const text = await res.text();
+      const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      const t = THEMES[settings.theme];
+      const container = document.createElement('div');
+      container.style.cssText = `max-width: 100%; height: 100%; overflow-y: auto; padding: 40px 8px 120px; color: ${t.text}; background: ${t.bg}; font-family: Georgia, serif; font-size: ${settings.fontSize}%; line-height: ${settings.lineHeight};`;
+      for (const p of paragraphs) {
+        const el = document.createElement('p');
+        el.textContent = p.replace(/\n/g, ' ');
+        el.style.cssText = 'margin: 0 0 1em 0; text-align: justify; hyphens: auto; -webkit-hyphens: auto;';
+        container.appendChild(el);
+      }
+      viewer.innerHTML = '';
+      viewer.appendChild(container);
+    } catch (err) {
+      console.error(err);
+      renderError('ОШИБКА', 'Не удалось прочитать файл');
+    }
+  }
+
+  function loadEpub(url) {
+    book = ePub(url);
+    rendition = book.renderTo(viewer, { width: '100%', height: '100%', spread: 'none', flow: 'paginated', manager: 'default' });
+
+    Object.entries(THEMES).forEach(([name, t]) => {
+      rendition.themes.register(name, {
+        'html': { 'background': `${t.bg} !important`, 'color': `${t.text} !important` },
+        'body': { 'background': `${t.bg} !important`, 'color': `${t.text} !important`, 'font-family': `Georgia, 'PT Serif', serif !important`, 'padding': '20px 4px 40px !important', 'line-height': `${settings.lineHeight} !important` },
+        'p, li, div, blockquote, td, th': { 'line-height': `${settings.lineHeight} !important` },
+        'p': { 'margin': '0 0 1em 0 !important', 'text-align': 'justify !important', 'hyphens': 'auto !important', '-webkit-hyphens': 'auto !important' },
+        'a': { 'color': `${t.link} !important` },
+        'img': { 'max-width': '100% !important', 'height': 'auto !important' }
+      });
+    });
+
+    rendition.themes.select(settings.theme);
+    rendition.themes.fontSize(settings.fontSize + '%');
+
+    rendition.hooks.content.register((contents) => {
+      try {
+        const doc = contents.document;
+        if (!doc) return;
+        const styleEl = doc.createElement('style');
+        styleEl.id = 'reader-injected-style';
+        styleEl.textContent = `p { margin: 0 0 1em 0 !important; text-align: justify !important; hyphens: auto !important; -webkit-hyphens: auto !important; } img { max-width: 100% !important; height: auto !important; }`;
+        doc.head.appendChild(styleEl);
+      } catch (e) {}
+    });
+
+    book.ready
+      .then(() => book.locations.generate(1600))
+      .then(() => { readerNav.classList.remove('hidden'); updateLocation(); return loadToc(); })
+      .then(() => { const saved = loadSavedPosition(); return rendition.display(saved || undefined); })
+      .catch(err => { console.error('Ошибка инициализации книги', err); rendition.display(); });
+
+    rendition.on('relocated', (location) => {
+      updateLocation();
+      updateActiveTocItem(location);
+      if (location && location.start && location.start.cfi) {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => savePosition(location.start.cfi), 400);
+      }
+    });
+
+    book.loaded.navigation.then(() => renderToc(book.navigation.toc));
+  }
+
+  function updateLocation() {
+    if (!rendition || !book || !book.locations) return;
+    const loc = rendition.currentLocation();
+    if (!loc || !loc.start) return;
+    const pct = book.locations.percentageFromCfi(loc.start.cfi);
+    if (typeof pct === 'number' && !isNaN(pct)) pageInfo.textContent = Math.round(pct * 100) + '%';
+  }
+
+  let tocItemsFlat = [];
+
+  function loadToc() {
+    if (!book) return Promise.resolve();
+    return book.loaded.navigation.then(() => renderToc(book.navigation.toc));
+  }
+
+  function renderToc(items) {
+    tocList.innerHTML = '';
+    tocItemsFlat = [];
+    if (!items || items.length === 0) {
+      tocList.innerHTML = '<li class="toc-empty">Содержание не найдено</li>';
+      return;
+    }
+    const buildList = (nodes, parentUl) => {
+      nodes.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'toc-item';
+        li.textContent = (item.label || 'Без названия').trim();
+        li.dataset.href = item.href || '';
+        li.addEventListener('click', () => { if (item.href) { rendition.display(item.href); closePanels(); } });
+        parentUl.appendChild(li);
+        tocItemsFlat.push({ el: li, href: item.href });
+        if (item.subitems && item.subitems.length > 0) {
+          const subUl = document.createElement('ul');
+          subUl.className = 'toc-sublist';
+          buildList(item.subitems, subUl);
+          li.appendChild(subUl);
+        }
+      });
+    };
+    buildList(items, tocList);
+  }
+
+  function updateActiveTocItem(location) {
+    if (!location || !location.start || !location.start.href) return;
+    const currentHref = location.start.href.split('#')[0];
+    let bestMatch = null;
+    tocItemsFlat.forEach(entry => {
+      if (!entry.href) return;
+      const hrefBase = entry.href.split('#')[0];
+      if (hrefBase === currentHref) bestMatch = entry;
+    });
+    tocItemsFlat.forEach(entry => entry.el.classList.remove('active'));
+    if (bestMatch) bestMatch.el.classList.add('active');
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (rendition) {
+      try {
+        const loc = rendition.currentLocation();
+        if (loc && loc.start && loc.start.cfi) savePosition(loc.start.cfi);
+      } catch {}
+    }
+  });
+
+  // ============ ANIMATION SYSTEM ============
+  const canvasLeft = $('canvasLeft');
+  const canvasRight = $('canvasRight');
+  const ctxLeft = canvasLeft ? canvasLeft.getContext('2d') : null;
+  const ctxRight = canvasRight ? canvasRight.getContext('2d') : null;
+
+  let animState = {
+    matrix: { dropsL: [], dropsR: [] },
+    dna: { angle: 0 },
+    neural: { nodes: [], connections: [] },
+    binary: { dropsL: [], dropsR: [] },
+    glitch: { lines: [] },
+    stars: { stars: [] },
+    tron: { offset: 0 },
+    wave: { time: 0 },
+    particles: { particles: [] }
+  };
+
+  function resizeCanvases() {
+    if (!canvasLeft || !canvasRight) return;
+    canvasLeft.width = canvasLeft.offsetWidth;
+    canvasLeft.height = canvasLeft.offsetHeight;
+    canvasRight.width = canvasRight.offsetWidth;
+    canvasRight.height = canvasRight.offsetHeight;
+    initAnimState();
+  }
+
+  function initAnimState() {
+    const w = canvasLeft ? canvasLeft.width : 200;
+    const h = canvasLeft ? canvasLeft.height : 800;
+
+    // Matrix
+    const cols = Math.floor(w / 14);
+    animState.matrix.dropsL = Array(cols).fill(1);
+    animState.matrix.dropsR = Array(cols).fill(1);
+
+    // Binary
+    animState.binary.dropsL = Array(cols).fill(1);
+    animState.binary.dropsR = Array(cols).fill(1);
+
+    // Neural
+    animState.neural.nodes = [];
+    for (let i = 0; i < 30; i++) {
+      animState.neural.nodes.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5
+      });
+    }
+
+    // Glitch
+    animState.glitch.lines = [];
+
+    // Stars
+    animState.stars.stars = [];
+    for (let i = 0; i < 100; i++) {
+      animState.stars.stars.push({
+        x: Math.random() * w - w/2,
+        y: Math.random() * h - h/2,
+        z: Math.random() * 1000
+      });
+    }
+
+    // Particles
+    animState.particles.particles = [];
+    for (let i = 0; i < 50; i++) {
+      animState.particles.particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        size: Math.random() * 2 + 1
+      });
+    }
+  }
+
+  function drawMatrix(ctx, drops, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#00E5FF';
+    ctx.font = '22px monospace';
+    const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾝ 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * 14, drops[i] * 14);
+      if (drops[i] * 14 > h && Math.random() > 0.99) drops[i] = 0;
+      drops[i]+=0.3;
+    }
+  }
+
+  function drawDNA(ctx, w, h, angle) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, w, h);
+    const centerX = w / 2;
+    const amplitude = 40;
+    const spacing = 20;
+    for (let y = 0; y < h; y += spacing) {
+      const offset = Math.sin((y + angle) * 0.02) * amplitude;
+      const x1 = centerX + offset;
+      const x2 = centerX - offset;
+      const alpha = (Math.sin((y + angle) * 0.02) + 1) / 2;
+      ctx.fillStyle = `rgba(0, 229, 255, ${alpha * 0.8})`;
+      ctx.beginPath();
+      ctx.arc(x1, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255, 0, 255, ${(1 - alpha) * 0.8})`;
+      ctx.beginPath();
+      ctx.arc(x2, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      if (y % 40 === 0) {
+        ctx.strokeStyle = `rgba(255, 204, 0, 0.3)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawNeural(ctx, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, w, h);
+    const nodes = animState.neural.nodes;
+    nodes.forEach(node => {
+      node.x += node.vx;
+      node.y += node.vy;
+      if (node.x < 0 || node.x > w) node.vx *= -1;
+      if (node.y < 0 || node.y > h) node.vy *= -1;
+    });
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 100) {
+          ctx.strokeStyle = `rgba(0, 229, 255, ${(1 - dist / 100) * 0.5})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    nodes.forEach(node => {
+      ctx.fillStyle = '#00E5FF';
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawBinary(ctx, drops, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#00FF00';
+    ctx.font = '14px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const text = Math.random() > 0.5 ? '1' : '0';
+      ctx.fillText(text, i * 14, drops[i] * 14);
+      if (drops[i] * 14 > h && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+
+  function drawGlitch(ctx, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, w, h);
+    if (Math.random() > 0.92) {
+      const y = Math.random() * h;
+      const height = Math.random() * 20 + 5;
+      const offset = (Math.random() - 0.5) * 20;
+      ctx.fillStyle = `rgba(0, 229, 255, 0.3)`;
+      ctx.fillRect(offset, y, w, height);
+    }
+    if (Math.random() > 0.97) {
+      ctx.fillStyle = `rgba(255, 0, 255, 0.2)`;
+      ctx.fillRect(0, Math.random() * h, w, 2);
+    }
+  }
+
+  function drawStars(ctx, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, w, h);
+    const centerX = w / 2;
+    const centerY = h / 2;
+    animState.stars.stars.forEach(star => {
+      star.z -= 0.5;
+      if (star.z <= 0) {
+        star.x = Math.random() * w - w/2;
+        star.y = Math.random() * h - h/2;
+        star.z = 1000;
+      }
+      const x = (star.x / star.z) * 100 + centerX;
+      const y = (star.y / star.z) * 100 + centerY;
+      const size = (1 - star.z / 1000) * 3;
+      const alpha = 1 - star.z / 1000;
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillRect(x, y, size, size);
+    });
+  }
+
+  function drawTron(ctx, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, w, h);
+    const gridSize = 40;
+    const offset = animState.tron.offset;
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = offset % gridSize; y < h; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    animState.tron.offset += 0.3;
+  }
+
+  function drawWave(ctx, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, w, h);
+    const time = animState.wave.time;
+    const colors = ['#00E5FF', '#FF00FF', '#FFCC00'];
+    colors.forEach((color, idx) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const y = h/2 + Math.sin(x * 0.02 + time + idx * 2) * 50;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    animState.wave.time += 0.04;
+  }
+
+  function drawParticles(ctx, w, h) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(0, 0, w, h);
+    const particles = animState.particles.particles;
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > w) p.vx *= -1;
+      if (p.y < 0 || p.y > h) p.vy *= -1;
+      ctx.fillStyle = '#00E5FF';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 80) {
+          ctx.strokeStyle = `rgba(0, 229, 255, ${(1 - dist / 80) * 0.3})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate() {
+    if (!settings.animEnabled) {
+      animFrameId = requestAnimationFrame(animate);
+      return;
+    }
+
+    const w = canvasLeft ? canvasLeft.width : 200;
+    const h = canvasLeft ? canvasLeft.height : 800;
+
+    if (ctxLeft && ctxRight) {
+      switch (currentAnimType) {
+        case 'matrix':
+          drawMatrix(ctxLeft, animState.matrix.dropsL, w, h);
+          drawMatrix(ctxRight, animState.matrix.dropsR, w, h);
+          break;
+        case 'dna':
+          drawDNA(ctxLeft, w, h, animState.dna.angle);
+          drawDNA(ctxRight, w, h, animState.dna.angle);
+          animState.dna.angle += 0.5;
+          break;
+        case 'neural':
+          drawNeural(ctxLeft, w, h);
+          drawNeural(ctxRight, w, h);
+          break;
+        case 'binary':
+          drawBinary(ctxLeft, animState.binary.dropsL, w, h);
+          drawBinary(ctxRight, animState.binary.dropsR, w, h);
+          break;
+        case 'glitch':
+          drawGlitch(ctxLeft, w, h);
+          drawGlitch(ctxRight, w, h);
+          break;
+        case 'stars':
+          drawStars(ctxLeft, w, h);
+          drawStars(ctxRight, w, h);
+          break;
+        case 'tron':
+          drawTron(ctxLeft, w, h);
+          drawTron(ctxRight, w, h);
+          break;
+        case 'wave':
+          drawWave(ctxLeft, w, h);
+          drawWave(ctxRight, w, h);
+          break;
+        case 'particles':
+          drawParticles(ctxLeft, w, h);
+          drawParticles(ctxRight, w, h);
+          break;
+      }
+    }
+
+    animFrameId = requestAnimationFrame(animate);
+  }
+
+  function initAnimations() {
+    if (animFrameId) cancelAnimationFrame(animFrameId);
+    resizeCanvases();
+    animate();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAnimations);
+  } else {
+    initAnimations();
+  }
+
+  window.addEventListener('resize', resizeCanvases);
+
+})();
+</script>
+<script src="/js/user-nav.js"></script>
+</body>
+</html>

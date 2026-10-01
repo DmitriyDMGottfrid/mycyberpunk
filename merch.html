@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBERPUNK // РИППЕРДОК</title>
+<style>
+  :root {
+    --cyan: #00ffff;
+    --magenta: #ff00ff;
+    --yellow: #ffcc00;
+    --green: #00ff00;
+    --red: #ff0040;
+    --bg-dark: #05060a;
+    --bg-panel: rgba(5, 6, 10, 0.85);
+    --font-mono: 'Courier New', Courier, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-dark);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    overflow-x: hidden;
+    overflow-y: auto;
+    cursor: crosshair;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ===== МЕНЮ ===== */
+  .menu {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px 25px;
+    z-index: 100;
+    padding: 15px 25px;
+    background: rgba(5, 6, 10, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    max-width: 95vw;
+  }
+
+  .menu-item {
+    position: relative;
+    padding: 6px 12px 6px 22px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s, text-shadow 0.2s;
+    white-space: nowrap;
+  }
+
+  .menu-item::before {
+    content: '[';
+    position: absolute;
+    left: 4px;
+    color: var(--magenta);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .menu-item .bracket {
+    color: var(--magenta);
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-left: 14px;
+  }
+
+  .menu-item::after {
+    content: '_';
+    position: absolute;
+    right: 22px;
+    bottom: 6px;
+    color: var(--magenta);
+    opacity: 0;
+  }
+
+  .menu-item:hover {
+    color: var(--magenta);
+    text-shadow: 0 0 8px var(--magenta);
+  }
+
+  .menu-item:hover::before,
+  .menu-item:hover::after,
+  .menu-item:hover .bracket { opacity: 1; }
+
+  .menu-item:hover::after { animation: blink 0.8s step-end infinite; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .menu-item.active {
+    color: var(--yellow);
+    text-shadow: 0 0 10px var(--yellow);
+  }
+
+  .menu-item.active::before,
+  .menu-item.active::after,
+  .menu-item.active .bracket {
+    opacity: 1;
+    color: var(--yellow);
+  }
+
+  .menu-item.active::after { animation: blink 0.8s step-end infinite; }
+
+  /* ===== HERO СЕКЦИЯ ===== */
+  .hero-section {
+    position: relative;
+    height: 50vh;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 60px;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: -10%;
+    width: 120%;
+    height: 120%;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a051a 50%, #0a0a1a 100%);
+    z-index: 1;
+  }
+
+  .hero-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 15s linear infinite;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(40px, 40px); }
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 20%, rgba(5,6,10,0.9) 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .hero-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+    background: linear-gradient(to top, var(--bg-dark), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 4;
+    text-align: center;
+  }
+
+  .site-title {
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: bold;
+    letter-spacing: 10px;
+    color: #fff;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px rgba(0,255,255,0.5);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .site-title::before,
+  .site-title::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .site-title::before {
+    color: var(--cyan);
+    z-index: -1;
+    animation: glitchTop 3s infinite linear alternate-reverse;
+  }
+
+  .site-title::after {
+    color: var(--magenta);
+    z-index: -2;
+    animation: glitchBottom 2.5s infinite linear alternate-reverse;
+  }
+
+  @keyframes glitchTop {
+    0%, 90%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    92% { clip-path: inset(20% 0 60% 0); transform: translate(-4px, -2px); }
+    94% { clip-path: inset(60% 0 10% 0); transform: translate(4px, 2px); }
+  }
+
+  @keyframes glitchBottom {
+    0%, 88%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    90% { clip-path: inset(70% 0 5% 0); transform: translate(4px, 2px); }
+    93% { clip-path: inset(10% 0 50% 0); transform: translate(-4px, -2px); }
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--magenta);
+    text-shadow: 0 0 10px var(--magenta);
+  }
+
+  .ripper-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 6px 16px;
+    border: 1px solid var(--red);
+    background: rgba(255, 0, 64, 0.1);
+    color: var(--red);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: pulseBorder 2s infinite;
+  }
+
+  @keyframes pulseBorder {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 0, 64, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(255, 0, 64, 0.6); }
+  }
+
+  /* ===== ПАНЕЛЬ ФИЛЬТРОВ ===== */
+  .filter-panel {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    position: relative;
+    z-index: 5;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--bg-panel);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-left: 3px solid var(--cyan);
+  }
+
+  .filter-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    margin-right: 10px;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid rgba(0,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .filter-btn:hover,
+  .filter-btn.active {
+    background: rgba(0,255,255,0.1);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,255,255,0.3);
+    color: #fff;
+  }
+
+  /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+    position: relative;
+    z-index: 5;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0,255,255,0.3);
+    padding-bottom: 10px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0,255,255,0.5);
+  }
+
+  .section-header .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
+
+  /* ===== КАРТОЧКИ ИМПЛАНТАТОВ ===== */
+  .implants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 60px;
+  }
+
+  .implant-card {
+    position: relative;
+    background: var(--bg-panel);
+    border: 1px solid rgba(0,255,255,0.2);
+    padding: 25px;
+    transition: all 0.3s;
+    clip-path: polygon(
+      0 0, 
+      100% 0, 
+      100% calc(100% - 15px), 
+      calc(100% - 15px) 100%, 
+      0 100%
+    );
+  }
+
+  .implant-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--cyan);
+    transition: all 0.3s;
+  }
+
+  .implant-card:hover {
+    border-color: rgba(0,255,255,0.5);
+    box-shadow: 0 0 30px rgba(0,255,255,0.2);
+    transform: translateY(-5px);
+  }
+
+  .implant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+  }
+
+  .implant-name {
+    font-size: 18px;
+    color: #fff;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 5px rgba(255,255,255,0.3);
+  }
+
+  .implant-category {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    text-transform: uppercase;
+  }
+
+  .implant-rating {
+    display: flex;
+    gap: 3px;
+  }
+
+  .rating-star {
+    color: var(--yellow);
+    font-size: 14px;
+    text-shadow: 0 0 5px var(--yellow);
+  }
+
+  .rating-star.empty {
+    color: rgba(255,255,255,0.2);
+    text-shadow: none;
+  }
+
+  .implant-price {
+    font-size: 20px;
+    color: var(--green);
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
+  }
+
+  .implant-price::before {
+    content: '€';
+    font-size: 14px;
+    margin-right: 3px;
+  }
+
+  .implant-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .implant-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-left: 2px solid var(--cyan);
+  }
+
+  .spec-item {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .spec-label {
+    color: var(--magenta);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .spec-value {
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .implant-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .pros-list, .cons-list {
+    list-style: none;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .pros-list li::before {
+    content: '✓ ';
+    color: var(--green);
+    font-weight: bold;
+  }
+
+  .cons-list li::before {
+    content: '✕ ';
+    color: var(--red);
+    font-weight: bold;
+  }
+
+  .pros-list li {
+    color: rgba(255,255,255,0.8);
+  }
+
+  .cons-list li {
+    color: rgba(255,255,255,0.6);
+  }
+
+  .verdict {
+    padding: 12px;
+    background: rgba(0,0,0,0.4);
+    border-left: 3px solid var(--yellow);
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .verdict::before {
+    content: 'ВЕРДИКТ: ';
+    color: var(--yellow);
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+
+  .verdict.recommended {
+    border-left-color: var(--green);
+  }
+
+  .verdict.recommended::before {
+    content: 'РЕКОМЕНДУЕМ: ';
+    color: var(--green);
+  }
+
+  .verdict.not-recommended {
+    border-left-color: var(--red);
+  }
+
+  .verdict.not-recommended::before {
+    content: 'НЕ РЕКОМЕНДУЕМ: ';
+    color: var(--red);
+  }
+
+  /* ===== СРАВНИТЕЛЬНАЯ ТАБЛИЦА ===== */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 12px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0,255,255,0.2);
+  }
+
+  .comparison-table th {
+    background: rgba(0,0,0,0.5);
+    color: var(--cyan);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .comparison-table td {
+    color: rgba(255,255,255,0.8);
+  }
+
+  .comparison-table tr:hover td {
+    background: rgba(0,255,255,0.05);
+  }
+
+  .table-rating {
+    color: var(--yellow);
+  }
+
+  .table-price {
+    color: var(--green);
+    font-weight: bold;
+  }
+
+  /* ===== БОКОВАЯ ПАНЕЛЬ ===== */
+  .side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(420px, 85vw);
+    height: calc(100vh - 28px);
+    background: linear-gradient(135deg, rgba(5,5,15,0.97) 0%, rgba(10,0,20,0.98) 100%);
+    border-left: 2px solid var(--cyan);
+    box-shadow: -10px 0 40px rgba(0,255,255,0.2), inset 0 0 60px rgba(0,255,255,0.03);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 150;
+    padding: 80px 35px 35px;
+    overflow-y: auto;
+  }
+
+  .side-panel.open { transform: translateX(0); }
+
+  .side-panel::before, .side-panel::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--magenta);
+  }
+  .side-panel::before { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+  .side-panel::after { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+
+  .panel-close {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .panel-close:hover { background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); color: #fff; }
+
+  .panel-mode { font-size: 11px; letter-spacing: 4px; color: var(--magenta); margin-bottom: 8px; text-transform: uppercase; opacity: 0.8; }
+  .panel-mode::before { content: '> '; color: var(--cyan); }
+  .panel-title { font-size: 22px; letter-spacing: 3px; color: #fff; text-transform: uppercase; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,255,255,0.3); text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+
+  .typewriter-block {
+    position: relative;
+    padding: 20px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-left: 3px solid var(--cyan);
+    margin-bottom: 25px;
+  }
+  .typewriter-block::before {
+    content: 'SYS.MSG';
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: #050510;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .typewriter-text { font-size: 18px; letter-spacing: 2px; color: var(--green); text-shadow: 0 0 8px rgba(0,255,0,0.6); min-height: 28px; line-height: 1.4; }
+  .typewriter-cursor { display: inline-block; width: 10px; height: 20px; background: var(--green); margin-left: 4px; vertical-align: middle; animation: cursorBlink 0.7s step-end infinite; box-shadow: 0 0 8px var(--green); }
+  @keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .status-lines { font-size: 11px; letter-spacing: 1px; color: rgba(0,255,255,0.7); line-height: 1.8; margin-bottom: 30px; }
+  .status-lines .line { opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.3s; }
+  .status-lines .line.visible { opacity: 1; transform: translateX(0); }
+  .status-lines .line .ok { color: var(--green); text-shadow: 0 0 5px var(--green); }
+  .status-lines .line .warn { color: var(--yellow); text-shadow: 0 0 5px var(--yellow); }
+
+  /* ===== СПЕЦИАЛЬНЫЙ КОНТЕНТ ДЛЯ АПЛИНКА ===== */
+  .uplink-content {
+    display: none;
+    margin-top: 20px;
+  }
+
+  .uplink-content.visible {
+    display: block;
+    animation: fadeSlideIn 0.5s ease-out;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .contact-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,255,255,0.3);
+    border-left: 3px solid var(--magenta);
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+  }
+
+  .contact-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: #0a0015;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    text-transform: uppercase;
+  }
+
+  .contact-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-bottom: 1px dashed rgba(0,255,255,0.15);
+  }
+
+  .contact-row:last-child { border-bottom: none; }
+  .contact-row .label { color: rgba(0,255,255,0.7); }
+  .contact-row .value { color: #fff; text-shadow: 0 0 5px rgba(0,255,255,0.5); font-weight: bold; }
+  .contact-row .value.encrypted { color: var(--yellow); font-family: monospace; letter-spacing: 2px; }
+  .contact-row .value.secure { color: var(--green); text-shadow: 0 0 5px var(--green); }
+
+  .uplink-warning {
+    margin-top: 20px;
+    padding: 12px;
+    background: rgba(255,0,64,0.1);
+    border: 1px solid rgba(255,0,64,0.4);
+    border-left: 3px solid var(--red);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #ff6680;
+    line-height: 1.6;
+  }
+
+  .uplink-warning::before {
+    content: '⚠ ВНИМАНИЕ: ';
+    color: var(--red);
+    font-weight: bold;
+    text-shadow: 0 0 5px var(--red);
+  }
+
+  /* ===== ВЫБОР ИМПЛАНТАТА ===== */
+  .implant-choice {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.5s, transform 0.5s;
+    border-top: 1px dashed rgba(255,0,255,0.3);
+    padding-top: 20px;
+  }
+  .implant-choice.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .choice-prompt { font-size: 14px; letter-spacing: 2px; color: #fff; margin-bottom: 20px; text-align: center; text-shadow: 0 0 8px rgba(255,255,255,0.5); animation: promptPulse 2s infinite; }
+  @keyframes promptPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .choice-buttons { display: flex; gap: 15px; justify-content: center; }
+
+  .cyber-btn {
+    flex: 1;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    background: transparent;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+  .cyber-btn::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.3s;
+  }
+  .cyber-btn:hover::before { left: 100%; }
+  .yes-btn { border-color: var(--green); color: var(--green); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+  .yes-btn:hover { background: rgba(0,255,0,0.15); box-shadow: 0 0 20px rgba(0,255,0,0.6); text-shadow: 0 0 8px var(--green); }
+  .no-btn { border-color: var(--red); color: var(--red); box-shadow: 0 0 10px rgba(255,0,64,0.2); }
+  .no-btn:hover { background: rgba(255,0,64,0.15); box-shadow: 0 0 20px rgba(255,0,64,0.6); text-shadow: 0 0 8px var(--red); }
+
+  /* ===== ОВЕРЛЕЙ ПЕРЕХОДА ===== */
+  .transition-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .transition-overlay.active { opacity: 1; pointer-events: all; }
+  .transition-text { font-size: 24px; letter-spacing: 5px; color: var(--cyan); text-shadow: 0 0 15px var(--cyan); margin-bottom: 20px; animation: glitch 0.3s infinite; }
+  .progress-bar { width: 300px; height: 4px; background: rgba(0,255,255,0.2); position: relative; overflow: hidden; }
+  .progress-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes glitch {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    20% { filter: hue-rotate(90deg) saturate(2); transform: translate(-2px, 1px); }
+    40% { filter: hue-rotate(180deg) saturate(1.5); transform: translate(2px, -1px); }
+    60% { filter: hue-rotate(270deg) saturate(2); transform: translate(-1px, -1px); }
+    80% { filter: hue-rotate(360deg) saturate(1.2); transform: translate(1px, 1px); }
+    100% { filter: hue-rotate(0deg) saturate(1); transform: translate(0); }
+  }
+
+  /* ===== БЕГУЩАЯ СТРОКА ===== */
+  .system-ticker {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    background: rgba(0, 5, 10, 0.95);
+    border-top: 1px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    z-index: 90;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    text-shadow: 0 0 5px rgba(0,255,255,0.5);
+  }
+  .ticker-track { display: flex; white-space: nowrap; animation: scrollTicker 25s linear infinite; }
+  .ticker-track span { padding-right: 60px; display: flex; align-items: center; gap: 15px; }
+  .ticker-track .separator { color: var(--magenta); font-weight: bold; }
+  @keyframes scrollTicker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  /* ===== КНОПКА ЗВУКА ===== */
+  .sound-btn {
+    position: fixed;
+    bottom: 40px;
+    right: 20px;
+    padding: 10px 18px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    z-index: 200;
+    transition: all 0.2s;
+  }
+  .sound-btn:hover { background: rgba(0,255,255,0.1); box-shadow: 0 0 15px rgba(0,255,255,0.5); }
+  .sound-btn.muted { border-color: var(--magenta); color: var(--magenta); }
+
+  /* ===== ПОДВАЛ ===== */
+  .cyber-footer {
+    background: #020205;
+    border-top: 1px solid rgba(0,255,255,0.2);
+    padding: 40px 20px 60px;
+    text-align: center;
+    position: relative;
+    z-index: 5;
+  }
+  .footer-copy { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+  .footer-copy span { color: var(--magenta); }
+
+  @media (max-width: 768px) {
+    .menu { gap: 10px 15px; padding: 10px 15px; }
+    .menu-item { font-size: 9px; letter-spacing: 1px; padding: 5px 8px; }
+    .menu-item .bracket { margin-left: 8px; }
+    .site-title { letter-spacing: 4px; }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+    .implants-grid { grid-template-columns: 1fr; }
+    .implant-pros-cons { grid-template-columns: 1fr; }
+    .comparison-table { font-size: 10px; }
+    .comparison-table th, .comparison-table td { padding: 8px; }
+    .choice-buttons { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Меню -->
+  <nav class="menu">
+    <div class="menu-item" data-mode="hub">Центральный_хаб<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="stream">Поток_данных<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="manifest">Манифест<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="logs">Логи<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="matrix">Матрица_образов<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="access">Доступ<span class="bracket">]</span></div>
+    <div class="menu-item active" data-mode="ripper">Риппердок<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="cog">Когнитивный_фид<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="implant">Имплантаты<span class="bracket">]</span></div>
+    <div class="menu-item" data-mode="uplink">Аплинк<span class="bracket">]</span></div>
+  </nav>
+
+  <!-- Боковая панель -->
+  <div class="side-panel" id="sidePanel">
+    <button class="panel-close" id="panelClose">✕</button>
+    <div class="panel-mode" id="panelMode">MODE: RIPPER</div>
+    <div class="panel-title" id="panelTitle">Инициализация</div>
+
+    <div class="typewriter-block">
+      <div class="typewriter-text" id="typewriterText"></div>
+      <span class="typewriter-cursor" id="typewriterCursor"></span>
+    </div>
+
+    <div class="status-lines" id="statusLines">
+      <div class="line" data-delay="200">> Нейронный интерфейс... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="400">> Синхронизация кортекса... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="600">> Калибровка зрительного модуля... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="800">> Подключение к сети... <span class="warn">[WAIT]</span></div>
+      <div class="line" data-delay="1000">> Шифрование канала AES-256... <span class="ok">[OK]</span></div>
+    </div>
+
+    <!-- Специальный контент для Аплинка -->
+    <div class="uplink-content" id="uplinkContent">
+      <div class="contact-block" data-label="КАНАЛЫ СВЯЗИ">
+        <div class="contact-row">
+          <span class="label">Зашифрованный email:</span>
+          <span class="value encrypted">booshes@mail.ru</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Комм-линк:</span>
+          <span class="value">+7 (951)298-95-60</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Нейро-частота:</span>
+          <span class="value secure">144.7 MHz [SECURE]</span>
+        </div>
+      </div>
+
+      <div class="contact-block" data-label="ТОЧКА СБРОСА">
+        <div class="contact-row">
+          <span class="label">Геолокация:</span>
+          <span class="value">Камчатский край</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Координаты:</span>
+          <span class="value encrypted">52.82815996002017 N, 158.13302884255168 E</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Часы работы:</span>
+          <span class="value">24/7 // БЕЗ ВЫХОДНЫХ</span>
+        </div>
+      </div>
+
+      <div class="contact-block" data-label="СОЦ. СЕТИ">
+        <div class="contact-row">
+          <span class="label">VK:</span>
+          <span class="value">ID:381628178</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">TeleGram:</span>
+          <span class="value">@DmitriyDM97</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Synaploids implants:</span>
+          <span class="value secure">Synaploid-free zone / sector</span>
+        </div>
+      </div>
+
+      <div class="uplink-warning">
+        Все каналы связи проходят через прокси-серверы корпорации. 
+        Не передавайте персональные данные без верификации PGP-ключа. 
+        Ответ в течение 24 часов.
+      </div>
+    </div>
+
+    <!-- Блок выбора имплантата -->
+    <div class="implant-choice" id="implantChoice">
+      <div class="choice-prompt">> ЗАДЕЙСТВОВАТЬ ИМПЛАНТАТ?</div>
+      <div class="choice-buttons">
+        <button class="cyber-btn yes-btn" id="btnYes">[ ДА ]</button>
+        <button class="cyber-btn no-btn" id="btnNo">[ НЕТ ]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Оверлей перехода -->
+  <div class="transition-overlay" id="transitionOverlay">
+    <div class="transition-text" id="transitionText">ПЕРЕХОД В РАЗДЕЛ...</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Hero секция -->
+  <section class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1 class="site-title" data-text="РИППЕРДОК">РИППЕРДОК</h1>
+      <div class="hero-subtitle">> АНАЛИТИКА_ИМПЛАНТАТОВ // КРИТИКА_ПРЕДЛОЖЕНИЙ <</div>
+      <div class="ripper-badge">
+        ⚠ НЕЗАВИСИМЫЕ ОБЗОРЫ
+      </div>
+    </div>
+  </section>
+
+  <!-- Панель фильтров -->
+  <div class="filter-panel">
+    <div class="filter-bar">
+      <span class="filter-label">> КАТЕГОРИЯ:</span>
+      <button class="filter-btn active" data-filter="all">ВСЕ</button>
+      <button class="filter-btn" data-filter="optical">ОПТИКА</button>
+      <button class="filter-btn" data-filter="neural">НЕЙРО</button>
+      <button class="filter-btn" data-filter="combat">БОЕВЫЕ</button>
+      <button class="filter-btn" data-filter="stealth">СТЕЛС</button>
+    </div>
+  </div>
+
+  <!-- Основной контент -->
+  <main class="container">
+    
+    <!-- Карточки имплантатов -->
+    <div class="section-header">
+      <h2>[ АНАЛИЗ_ИМПЛАНТАТОВ ]</h2>
+      <div class="line"></div>
+    </div>
+
+    <div class="implants-grid" id="implantsGrid"></div>
+
+    <!-- Сравнительная таблица -->
+    <div class="section-header">
+      <h2>[ СРАВНЕНИЕ_МОДЕЛЕЙ ]</h2>
+      <div class="line"></div>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table class="comparison-table" id="comparisonTable">
+        <thead>
+          <tr>
+            <th>МОДЕЛЬ</th>
+            <th>КАТЕГОРИЯ</th>
+            <th>РЕЙТИНГ</th>
+            <th>ЦЕНА</th>
+            <th>ВЕРДИКТ</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- Подвал -->
+  <footer class="cyber-footer">
+    <div class="footer-copy">
+      © 2026 MY_CYBERPUNK <span>//</span> ALL RIGHTS RESERVED <span>//</span> DESIGNED IN NIGHT CITY
+    </div>
+  </footer>
+
+  <!-- Бегущая строка -->
+  <div class="system-ticker">
+    <div class="ticker-track">
+      <span>
+        SYS.ONLINE <span class="separator">//</span> 
+        RIPPER_ANALYSIS: ACTIVE <span class="separator">//</span> 
+        IMPLANTS_REVIEWED: 6 <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        SYS.ONLINE <span class="separator">//</span> 
+        RIPPER_ANALYSIS: ACTIVE <span class="separator">//</span> 
+        IMPLANTS_REVIEWED: 6 <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+      </span>
+      <span>
+        SYS.ONLINE <span class="separator">//</span> 
+        RIPPER_ANALYSIS: ACTIVE <span class="separator">//</span> 
+        IMPLANTS_REVIEWED: 6 <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        SYS.ONLINE <span class="separator">//</span> 
+        RIPPER_ANALYSIS: ACTIVE <span class="separator">//</span> 
+        IMPLANTS_REVIEWED: 6 <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Кнопка звука -->
+  <button class="sound-btn" id="soundBtn">■ ВЫКЛ ЗВУК</button>
+
+<script>
+  // Данные имплантатов
+  const implantsData = [
+    {
+      id: 1,
+      name: 'KIROshi ОПТИКА MK.3',
+      category: 'optical',
+      categoryLabel: 'ОПТИЧЕСКИЙ',
+      rating: 4,
+      price: 1500,
+      desc: 'Продвинутый оптический имплантат с тепловизором, ночным видением и зумом до 40x. Совместим с большинством нейро-интерфейсов.',
+      specs: {
+        'Разрешение': '8K',
+        'Зум': '40x',
+        'Совместимость': '95%',
+        'Гарантия': '2 года'
+      },
+      pros: ['Отличное качество изображения', 'Низкое энергопотребление', 'Быстрый отклик'],
+      cons: ['Высокая цена', 'Требует регулярной калибровки'],
+      verdict: 'Отличный выбор для профессионалов. Цена оправдана качеством.',
+      verdictType: 'recommended'
+    },
+    {
+      id: 2,
+      name: 'NEURO-LINK v2.1',
+      category: 'neural',
+      categoryLabel: 'НЕЙРОИНТЕРФЕЙС',
+      rating: 5,
+      price: 2800,
+      desc: 'Прямое подключение к матрице без внешних устройств. Скорость передачи данных до 10 Гб/с. Встроенная защита от ICE.',
+      specs: {
+        'Скорость': '10 Гб/с',
+        'Защита': 'ICE-3',
+        'Задержка': '<1 мс',
+        'Гарантия': '3 года'
+      },
+      pros: ['Молниеносная скорость', 'Встроенная защита', 'Стабильное соединение'],
+      cons: ['Сложная установка', 'Риск отторжения 5%'],
+      verdict: 'Лучший нейро-интерфейс на рынке. Must-have для нетраннеров.',
+      verdictType: 'recommended'
+    },
+    {
+      id: 3,
+      name: 'MAELSTROM КОГТИ',
+      category: 'combat',
+      categoryLabel: 'БОЕВОЙ',
+      rating: 3,
+      price: 800,
+      desc: 'Выдвижные когти из титанового сплава. Длина 15 см. Встроенный электрошокер 50000 вольт.',
+      specs: {
+        'Материал': 'Титан',
+        'Длина': '15 см',
+        'Напряжение': '50kV',
+        'Гарантия': '1 год'
+      },
+      pros: ['Прочная конструкция', 'Мощный электрошокер'],
+      cons: ['Шумный механизм', 'Требует частой заточки', 'Привлекает внимание'],
+      verdict: 'Устаревшая модель. Есть более тихие и эффективные аналоги.',
+      verdictType: 'not-recommended'
+    },
+    {
+      id: 4,
+      name: 'GHOST PROTOCOL',
+      category: 'stealth',
+      categoryLabel: 'СТЕЛС',
+      rating: 5,
+      price: 3500,
+      desc: 'Полная невидимость для электронных систем сканирования. Глушит все сигналы в радиусе 5 метров.',
+      specs: {
+        'Радиус': '5 м',
+        'Время работы': '2 ч',
+        'Перезарядка': '30 мин',
+        'Гарантия': '2 года'
+      },
+      pros: ['Абсолютная невидимость', 'Широкий радиус', 'Быстрая перезарядка'],
+      cons: ['Очень высокая цена', 'Ограниченное время работы'],
+      verdict: 'Идеален для скрытных операций. Цена кусается, но оно того стоит.',
+      verdictType: 'recommended'
+    },
+    {
+      id: 5,
+      name: 'SYNAPOID БАЗОВЫЙ',
+      category: 'neural',
+      categoryLabel: 'НЕЙРОИНТЕРФЕЙС',
+      rating: 2,
+      price: 400,
+      desc: 'Бюджетный нейро-интерфейс для базового подключения. Скорость до 100 Мб/с. Без защиты от взлома.',
+      specs: {
+        'Скорость': '100 Мб/с',
+        'Защита': 'Нет',
+        'Задержка': '50 мс',
+        'Гарантия': '6 месяцев'
+      },
+      pros: ['Низкая цена', 'Простая установка'],
+      cons: ['Медленный', 'Нет защиты', 'Частые сбои', 'Устаревший протокол'],
+      verdict: 'Избегайте. Лучше накопить на нормальный имплантат.',
+      verdictType: 'not-recommended'
+    },
+    {
+      id: 6,
+      name: 'EAGLE EYE LITE',
+      category: 'optical',
+      categoryLabel: 'ОПТИЧЕСКИЙ',
+      rating: 4,
+      price: 900,
+      desc: 'Облегчённая версия оптики Kiroshi. Тепловизор и ночное видение. Зум до 20x. Отличное соотношение цены и качества.',
+      specs: {
+        'Разрешение': '4K',
+        'Зум': '20x',
+        'Совместимость': '90%',
+        'Гарантия': '2 года'
+      },
+      pros: ['Доступная цена', 'Хорошее качество', 'Лёгкий вес'],
+      cons: ['Меньший зум', 'Нет стабилизации'],
+      verdict: 'Лучший выбор для начинающих. Отличное соотношение цены и качества.',
+      verdictType: 'recommended'
+    }
+  ];
+
+  // DOM элементы
+  const sidePanel = document.getElementById('sidePanel');
+  const panelClose = document.getElementById('panelClose');
+  const panelMode = document.getElementById('panelMode');
+  const panelTitle = document.getElementById('panelTitle');
+  const typewriterText = document.getElementById('typewriterText');
+  const implantChoice = document.getElementById('implantChoice');
+  const uplinkContent = document.getElementById('uplinkContent');
+  const btnYes = document.getElementById('btnYes');
+  const btnNo = document.getElementById('btnNo');
+  const transitionOverlay = document.getElementById('transitionOverlay');
+  const transitionText = document.getElementById('transitionText');
+  const progressFill = document.getElementById('progressFill');
+  const statusLines = document.querySelectorAll('.status-lines .line');
+  const soundBtn = document.getElementById('soundBtn');
+  const implantsGrid = document.getElementById('implantsGrid');
+  const comparisonTable = document.querySelector('#comparisonTable tbody');
+
+  let currentMode = 'RIPPER';
+  let typeWriterTimer = null;
+  let statusTimers = [];
+  let soundEnabled = true;
+  let audioCtx = null;
+  let currentFilter = 'all';
+
+  // ===== Web Audio API =====
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playKeyClick() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 800 + Math.random() * 400;
+    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function playSuccessSound() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    initAudio();
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) {
+      soundBtn.textContent = '■ ВЫКЛ ЗВУК';
+      soundBtn.classList.remove('muted');
+    } else {
+      soundBtn.textContent = '▶ ВКЛ ЗВУК';
+      soundBtn.classList.add('muted');
+    }
+  });
+
+  function unlockAudio() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+  }
+
+  document.addEventListener('click', unlockAudio, { once: true });
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+
+  // ===== РЕНДЕР КАРТОЧЕК =====
+  function renderImplants(data) {
+    implantsGrid.innerHTML = '';
+
+    data.forEach(implant => {
+      const stars = Array.from({length: 5}, (_, i) => 
+        `<span class="rating-star ${i < implant.rating ? '' : 'empty'}">★</span>`
+      ).join('');
+
+      const prosHtml = implant.pros.map(p => `<li>${p}</li>`).join('');
+      const consHtml = implant.cons.map(c => `<li>${c}</li>`).join('');
+
+      const specsHtml = Object.entries(implant.specs).map(([key, value]) => `
+        <div class="spec-item">
+          <span class="spec-label">${key}:</span>
+          <span class="spec-value">${value}</span>
+        </div>
+      `).join('');
+
+      const card = document.createElement('div');
+      card.className = 'implant-card';
+      card.innerHTML = `
+        <div class="implant-header">
+          <div>
+            <div class="implant-name">${implant.name}</div>
+            <div class="implant-category">${implant.categoryLabel}</div>
+          </div>
+          <div class="implant-rating">${stars}</div>
+        </div>
+        <div class="implant-price">${implant.price}</div>
+        <div class="implant-desc">${implant.desc}</div>
+        <div class="implant-specs">${specsHtml}</div>
+        <div class="implant-pros-cons">
+          <ul class="pros-list">${prosHtml}</ul>
+          <ul class="cons-list">${consHtml}</ul>
+        </div>
+        <div class="verdict ${implant.verdictType}">${implant.verdict}</div>
+      `;
+      implantsGrid.appendChild(card);
+    });
+  }
+
+  // ===== РЕНДЕР ТАБЛИЦЫ =====
+  function renderComparisonTable(data) {
+    comparisonTable.innerHTML = '';
+
+    data.forEach(implant => {
+      const stars = '★'.repeat(implant.rating) + '☆'.repeat(5 - implant.rating);
+      const verdictText = implant.verdictType === 'recommended' ? '✓ РЕКОМ.' : implant.verdictType === 'not-recommended' ? '✕ НЕ РЕК.' : '—';
+      const verdictColor = implant.verdictType === 'recommended' ? 'var(--green)' : implant.verdictType === 'not-recommended' ? 'var(--red)' : 'var(--yellow)';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${implant.name}</td>
+        <td>${implant.categoryLabel}</td>
+        <td class="table-rating">${stars}</td>
+        <td class="table-price">€${implant.price}</td>
+        <td style="color: ${verdictColor}; font-weight: bold;">${verdictText}</td>
+      `;
+      comparisonTable.appendChild(row);
+    });
+  }
+
+  // ===== ФИЛЬТРАЦИЯ =====
+  function filterImplants() {
+    let filtered = implantsData;
+    if (currentFilter !== 'all') {
+      filtered = implantsData.filter(i => i.category === currentFilter);
+    }
+    renderImplants(filtered);
+    renderComparisonTable(filtered);
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      filterImplants();
+      playKeyClick();
+    });
+  });
+
+  // ===== ПЕЧАТНАЯ МАШИНКА =====
+  function typeWriter(text, element, speed = 70) {
+    return new Promise(resolve => {
+      element.textContent = '';
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          playKeyClick();
+          i++;
+          const delay = speed + (Math.random() - 0.5) * 40;
+          typeWriterTimer = setTimeout(type, delay);
+        } else {
+          resolve();
+        }
+      }
+      type();
+    });
+  }
+
+  // ===== ОТКРЫТИЕ ПАНЕЛИ =====
+  function openPanel(mode, title) {
+    currentMode = mode;
+    panelMode.textContent = `MODE: ${mode}`;
+    panelTitle.textContent = title;
+    
+    statusLines.forEach(line => line.classList.remove('visible'));
+    statusTimers.forEach(t => clearTimeout(t));
+    statusTimers = [];
+    implantChoice.classList.remove('visible');
+    uplinkContent.classList.remove('visible');
+    
+    sidePanel.classList.add('open');
+    if (typeWriterTimer) clearTimeout(typeWriterTimer);
+    
+    const uplinkMessage = mode === 'UPLINK' ? 'Канал связи открыт' : 'Имплантат активирован';
+    
+    typeWriter(uplinkMessage, typewriterText, 80).then(() => {
+      statusLines.forEach(line => {
+        const delay = parseInt(line.dataset.delay);
+        const timer = setTimeout(() => {
+          line.classList.add('visible');
+          playKeyClick();
+        }, delay);
+        statusTimers.push(timer);
+      });
+
+      setTimeout(() => {
+        if (mode === 'UPLINK') {
+          uplinkContent.classList.add('visible');
+        } else {
+          implantChoice.classList.add('visible');
+        }
+      }, 1200);
+    });
+  }
+
+  function closePanel() {
+    sidePanel.classList.remove('open');
+    if (typeWriterTimer) clearTimeout(typeWriterTimer);
+    statusTimers.forEach(t => clearTimeout(t));
+    statusTimers = [];
+    implantChoice.classList.remove('visible');
+    uplinkContent.classList.remove('visible');
+  }
+
+  panelClose.addEventListener('click', () => {
+    playKeyClick();
+    closePanel();
+  });
+  
+  btnNo.addEventListener('click', () => {
+    playKeyClick();
+    closePanel();
+  });
+
+  btnYes.addEventListener('click', () => {
+    playSuccessSound();
+    
+    const titles = {
+      'HUB': 'ЦЕНТРАЛЬНЫЙ ХАБ',
+      'STREAM': 'ПОТОК ДАННЫХ',
+      'MANIFEST': 'МАНИФЕСТ',
+      'LOGS': 'АРХИВ ЛОГОВ',
+      'MATRIX': 'МАТРИЦА ОБРАЗОВ',
+      'ACCESS': 'УРОВЕНЬ ДОСТУПА',
+      'RIPPER': 'РИППЕРДОК-КЛИНИКА',
+      'COG': 'КОГНИТИВНЫЙ ФИД',
+      'IMPLANT': 'КАТАЛОГ ИМПЛАНТАТОВ',
+      'UPLINK': 'АПЛИНК-КАНАЛ'
+    };
+    
+    transitionText.textContent = `ЗАГРУЗКА: ${titles[currentMode] || 'МОДУЛЬ'}...`;
+    transitionOverlay.classList.add('active');
+    
+    setTimeout(() => { progressFill.style.width = '100%'; }, 100);
+
+    setTimeout(() => {
+      console.log(`Переход в раздел: ${currentMode}`);
+      transitionOverlay.classList.remove('active');
+      progressFill.style.width = '0%';
+      closePanel();
+    }, 1500);
+  });
+
+  // ===== КЛИКИ ПО МЕНЮ =====
+  const menuItems = document.querySelectorAll('.menu-item');
+  const menuTitles = {
+    'HUB': 'Центральный хаб',
+    'STREAM': 'Поток данных',
+    'MANIFEST': 'Манифест системы',
+    'LOGS': 'Архив логов',
+    'MATRIX': 'Матрица образов',
+    'ACCESS': 'Уровень доступа',
+    'RIPPER': 'Риппердок-клиника',
+    'COG': 'Когнитивный фид',
+    'IMPLANT': 'Каталог имплантатов',
+    'UPLINK': 'Аплинк-канал'
+  };
+
+  menuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      playKeyClick();
+      
+      const mode = item.dataset.mode.toUpperCase();
+      if (mode === 'RIPPER') {
+        closePanel();
+        return;
+      }
+      openPanel(mode, menuTitles[mode] || 'Инициализация');
+    });
+  });
+
+  // Закрытие по клику вне панели
+  document.addEventListener('click', (e) => {
+    if (e.target === panelClose || e.target === btnNo || e.target === btnYes || e.target === soundBtn) return;
+    if (!sidePanel.contains(e.target) && !e.target.closest('.menu-item')) {
+      closePanel();
+    }
+  });
+
+  // Инициализация
+  renderImplants(implantsData);
+  renderComparisonTable(implantsData);
+</script>
+
+</body>
+</html>

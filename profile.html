@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBERPUNK // ЛИЧНЫЙ КАБИНЕТ</title>
+<style>
+  :root {
+    --cyan: #00ffff; --magenta: #ff00ff; --yellow: #ffcc00; --green: #00ff00; --red: #ff0040;
+    --bg-dark: #05060a; --bg-panel: rgba(5, 6, 10, 0.9); --font-mono: 'Courier New', Courier, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg-dark); color: var(--cyan); font-family: var(--font-mono); overflow-x: hidden; min-height: 100vh; }
+  body::after { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0) 4px); pointer-events: none; z-index: 999; }
+
+  .menu { position: fixed; top: 0; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 15px 25px; z-index: 100; padding: 15px 25px; background: rgba(5, 6, 10, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0, 255, 255, 0.2); max-width: 95vw; }
+  .menu-item { position: relative; padding: 6px 12px 6px 22px; font-size: 11px; letter-spacing: 1.5px; color: var(--cyan); text-transform: uppercase; cursor: pointer; transition: color 0.2s; white-space: nowrap; text-decoration: none; }
+  .menu-item:hover { color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+  .menu-item.active { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 100px 20px 60px; }
+
+  .page-title { font-size: 26px; letter-spacing: 4px; color: #fff; text-transform: uppercase; text-shadow: 0 0 12px rgba(0,255,255,0.6); margin-bottom: 10px; }
+  .page-title::before { content: '> '; color: var(--cyan); }
+  .page-subtitle { font-size: 12px; letter-spacing: 2px; color: var(--magenta); margin-bottom: 30px; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid rgba(0,255,255,0.3); background: var(--bg-panel); margin-bottom: 30px; }
+  .tab { flex: 1; min-width: 140px; padding: 14px 20px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; color: rgba(0,255,255,0.6); background: transparent; border: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; position: relative; }
+  .tab:hover:not(.active) { color: var(--cyan); background: rgba(0,255,255,0.05); }
+  .tab.active { color: #fff; background: rgba(0,255,255,0.12); text-shadow: 0 0 10px var(--cyan); }
+  .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+
+  .tab-panel { display: none; animation: fadeIn 0.3s ease-out; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel { background: var(--bg-panel); border: 1px solid rgba(0,255,255,0.2); border-left: 3px solid var(--cyan); padding: 28px; margin-bottom: 20px; position: relative; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%); }
+  .panel-title { font-size: 14px; letter-spacing: 3px; color: #fff; text-transform: uppercase; padding-bottom: 12px; margin-bottom: 20px; border-bottom: 1px dashed rgba(0,255,255,0.3); }
+  .panel-title::before { content: '◈ '; color: var(--cyan); }
+
+  .info-grid { display: grid; grid-template-columns: 200px 1fr; gap: 30px; align-items: flex-start; }
+  @media (max-width: 700px) { .info-grid { grid-template-columns: 1fr; } }
+
+  .avatar-block { text-align: center; }
+  .avatar-img { width: 160px; height: 160px; border-radius: 50%; border: 2px solid var(--cyan); box-shadow: 0 0 25px rgba(0,255,255,0.4); object-fit: cover; background: rgba(0,0,0,0.5); display: block; margin: 0 auto 15px; }
+  .avatar-placeholder { width: 160px; height: 160px; border-radius: 50%; border: 2px dashed rgba(0,255,255,0.4); background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 48px; color: rgba(0,255,255,0.3); margin: 0 auto 15px; }
+
+  .avatar-actions { display: flex; flex-direction: column; gap: 8px; }
+
+  .meta-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 12px; letter-spacing: 1px; border-bottom: 1px dashed rgba(0,255,255,0.15); }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-row .label { color: rgba(0,255,255,0.7); }
+  .meta-row .value { color: #fff; text-shadow: 0 0 5px rgba(0,255,255,0.5); }
+  .meta-row .value.role-admin { color: var(--magenta); text-shadow: 0 0 8px var(--magenta); }
+  .meta-row .value.role-operator { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
+  .meta-row .value.role-subscriber { color: var(--green); text-shadow: 0 0 8px var(--green); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+  .stat-box { background: rgba(0,255,255,0.05); border: 1px solid rgba(0,255,255,0.2); padding: 15px; text-align: center; }
+  .stat-box .num { font-size: 24px; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+  .stat-box .lbl { font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.6); margin-top: 5px; text-transform: uppercase; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--magenta); margin-bottom: 8px; text-transform: uppercase; }
+  .form-label::before { content: '> '; color: var(--cyan); }
+  .form-input, .form-textarea { width: 100%; padding: 12px 15px; font-family: var(--font-mono); font-size: 13px; color: #fff; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,255,0.2); outline: none; transition: all 0.3s; }
+  .form-input:focus, .form-textarea:focus { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0,255,255,0.3); }
+  .form-textarea { min-height: 90px; resize: vertical; line-height: 1.6; }
+  .form-hint { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 6px; letter-spacing: 1px; }
+
+  .btn { padding: 12px 24px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 2px; background: transparent; border: 1px solid; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+  .btn-primary { color: var(--green); border-color: var(--green); }
+  .btn-primary:hover:not(:disabled) { background: rgba(0,255,0,0.15); box-shadow: 0 0 20px rgba(0,255,0,0.5); }
+  .btn-danger { color: var(--red); border-color: var(--red); }
+  .btn-danger:hover:not(:disabled) { background: rgba(255,0,64,0.15); box-shadow: 0 0 20px rgba(255,0,64,0.5); }
+  .btn-cyan { color: var(--cyan); border-color: var(--cyan); }
+  .btn-cyan:hover:not(:disabled) { background: rgba(0,255,255,0.15); box-shadow: 0 0 20px rgba(0,255,255,0.5); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-sm { padding: 8px 14px; font-size: 11px; }
+
+  .message { margin-top: 15px; padding: 12px; font-size: 11px; letter-spacing: 1px; line-height: 1.6; display: none; border-left: 3px solid; }
+  .message.visible { display: block; }
+  .message.success { background: rgba(0,255,0,0.1); border-color: var(--green); color: var(--green); }
+  .message.error { background: rgba(255,0,64,0.1); border-color: var(--red); color: var(--red); }
+  .message.info { background: rgba(0,255,255,0.1); border-color: var(--cyan); color: var(--cyan); }
+
+  .order-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(0,255,255,0.2); border-left: 3px solid var(--cyan); padding: 18px; margin-bottom: 15px; }
+  .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed rgba(0,255,255,0.2); }
+  .order-id { font-size: 14px; color: #fff; letter-spacing: 2px; }
+  .order-status { font-size: 10px; padding: 4px 10px; border: 1px solid; letter-spacing: 1px; text-transform: uppercase; }
+  .order-status.pending { color: var(--yellow); border-color: var(--yellow); }
+  .order-status.processing { color: var(--cyan); border-color: var(--cyan); }
+  .order-status.shipped { color: var(--green); border-color: var(--green); }
+  .order-status.delivered { color: var(--green); border-color: var(--green); }
+  .order-status.cancelled { color: var(--red); border-color: var(--red); }
+  .order-meta { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.7; }
+  .order-total { font-size: 14px; color: var(--green); text-shadow: 0 0 8px var(--green); margin-top: 8px; }
+
+  .comment-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(0,255,255,0.2); border-left: 3px solid var(--magenta); padding: 15px; margin-bottom: 12px; }
+  .comment-card .post-title { font-size: 11px; color: var(--cyan); margin-bottom: 8px; letter-spacing: 1px; }
+  .comment-card .comment-content { font-size: 12px; color: rgba(255,255,255,0.85); line-height: 1.6; margin-bottom: 8px; }
+  .comment-card .comment-date { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.4); font-size: 13px; letter-spacing: 2px; }
+
+  .system-ticker { position: fixed; bottom: 0; left: 0; width: 100%; height: 28px; background: rgba(0, 5, 10, 0.95); border-top: 1px solid var(--cyan); display: flex; align-items: center; overflow: hidden; z-index: 90; font-size: 11px; letter-spacing: 2px; color: var(--cyan); }
+  .ticker-track { display: flex; white-space: nowrap; animation: scrollTicker 25s linear infinite; }
+  .ticker-track span { padding-right: 60px; display: flex; align-items: center; gap: 15px; }
+  .ticker-track .separator { color: var(--magenta); font-weight: bold; }
+  @keyframes scrollTicker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+
+<nav class="menu">
+  <a href="/hub" class="menu-item">Центральный_хаб</a>
+  <a href="/stream" class="menu-item">Поток_данных</a>
+  <a href="/manifest" class="menu-item">Манифест</a>
+  <a href="/logs" class="menu-item">Логи</a>
+  <a href="/matrix" class="menu-item">Матрица_образов</a>
+  <a href="/access" class="menu-item">Доступ</a>
+  <a href="/ripper" class="menu-item">Риппердок</a>
+  <a href="/cog" class="menu-item">Когнитивный_фид</a>
+  <a href="/implant" class="menu-item">Имплантаты</a>
+  <a href="/profile" class="menu-item active">Кабинет</a>
+</nav>
+
+<main class="container">
+  <h1 class="page-title">Личный кабинет</h1>
+  <div class="page-subtitle">> ИДЕНТИФИКАТОР: <span id="subUsername">...</span> // СТАТУС: <span id="subRole">...</span></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="info">[ ИНФОРМАЦИЯ ]</button>
+    <button class="tab" data-tab="edit">[ РЕДАКТИРОВАНИЕ ]</button>
+    <button class="tab" data-tab="password">[ ПАРОЛЬ ]</button>
+    <button class="tab" data-tab="orders">[ ЗАКАЗЫ ]</button>
+    <button class="tab" data-tab="comments">[ КОММЕНТАРИИ ]</button>
+  </div>
+
+  <!-- ВКЛАДКА 1: ИНФОРМАЦИЯ -->
+  <section class="tab-panel active" id="panel-info">
+    <div class="panel">
+      <h2 class="panel-title">Профиль</h2>
+
+      <div class="info-grid">
+        <div class="avatar-block">
+          <div id="avatarContainer"></div>
+
+          <div class="avatar-actions">
+            <input type="file" id="avatarInput" accept="image/*" style="display:none">
+            <button class="btn btn-cyan btn-sm" id="uploadAvatarBtn">[ ЗАГРУЗИТЬ АВАТАР ]</button>
+            <button class="btn btn-danger btn-sm" id="deleteAvatarBtn">[ УДАЛИТЬ АВАТАР ]</button>
+          </div>
+          <div class="message" id="avatarMsg"></div>
+        </div>
+
+        <div>
+          <div class="meta-row"><span class="label">ID:</span><span class="value" id="infoId">—</span></div>
+          <div class="meta-row"><span class="label">Позывной:</span><span class="value" id="infoUsername">—</span></div>
+          <div class="meta-row"><span class="label">Email:</span><span class="value" id="infoEmail">—</span></div>
+          <div class="meta-row"><span class="label">Роль:</span><span class="value" id="infoRole">—</span></div>
+          <div class="meta-row"><span class="label">Дата регистрации:</span><span class="value" id="infoCreated">—</span></div>
+          <div class="meta-row"><span class="label">Последний вход:</span><span class="value" id="infoLastLogin">—</span></div>
+
+          <div class="stats-grid">
+            <div class="stat-box"><div class="num" id="statOrders">0</div><div class="lbl">Заказы</div></div>
+            <div class="stat-box"><div class="num" id="statComments">0</div><div class="lbl">Комментарии</div></div>
+            <div class="stat-box"><div class="num" id="statPosts">0</div><div class="lbl">Посты</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ВКЛАДКА 2: РЕДАКТИРОВАНИЕ -->
+  <section class="tab-panel" id="panel-edit">
+    <div class="panel">
+      <h2 class="panel-title">Редактирование профиля</h2>
+
+      <form id="editForm">
+        <div class="form-group">
+          <label class="form-label" for="editUsername">Позывной</label>
+          <input type="text" class="form-input" id="editUsername" required minlength="3" maxlength="20">
+          <div class="form-hint">3-20 символов, латиница, цифры и _</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editEmail">Email</label>
+          <input type="email" class="form-input" id="editEmail">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editBio">О себе</label>
+          <textarea class="form-textarea" id="editBio" maxlength="500" placeholder="Пара слов о себе..."></textarea>
+          <div class="form-hint">До 500 символов</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="editSubmit">[ СОХРАНИТЬ ]</button>
+        <div class="message" id="editMsg"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ВКЛАДКА 3: ПАРОЛЬ -->
+  <section class="tab-panel" id="panel-password">
+    <div class="panel">
+      <h2 class="panel-title">Смена пароля</h2>
+
+      <form id="pwdForm">
+        <div class="form-group">
+          <label class="form-label" for="oldPwd">Текущий пароль</label>
+          <input type="password" class="form-input" id="oldPwd" required autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newPwd">Новый пароль</label>
+          <input type="password" class="form-input" id="newPwd" required minlength="6" autocomplete="new-password">
+          <div class="form-hint">Минимум 6 символов</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newPwd2">Подтверждение</label>
+          <input type="password" class="form-input" id="newPwd2" required autocomplete="new-password">
+          <div class="form-hint" id="pwdMatchHint">Пароли должны совпадать</div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="pwdSubmit">[ СМЕНИТЬ ПАРОЛЬ ]</button>
+        <div class="message" id="pwdMsg"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ВКЛАДКА 4: ЗАКАЗЫ -->
+  <section class="tab-panel" id="panel-orders">
+    <div class="panel">
+      <h2 class="panel-title">История заказов</h2>
+      <div id="ordersList"><div class="empty-state">Загрузка...</div></div>
+    </div>
+  </section>
+
+  <!-- ВКЛАДКА 5: КОММЕНТАРИИ -->
+  <section class="tab-panel" id="panel-comments">
+    <div class="panel">
+      <h2 class="panel-title">Мои комментарии</h2>
+      <div id="commentsList"><div class="empty-state">Загрузка...</div></div>
+    </div>
+  </section>
+</main>
+
+<div class="system-ticker">
+  <div class="ticker-track">
+    <span>
+      USER_PANEL: ACTIVE <span class="separator">//</span>
+      MODULE: PROFILE <span class="separator">//</span>
+      ENCRYPTION: AES-256 <span class="separator">//</span>
+      SECURE_CONNECTION <span class="separator">//</span>
+      USER_PANEL: ACTIVE <span class="separator">//</span>
+      MODULE: PROFILE <span class="separator">//</span>
+      ENCRYPTION: AES-256 <span class="separator">//</span>
+      SECURE_CONNECTION <span class="separator">//</span>
+    </span>
+    <span>
+      USER_PANEL: ACTIVE <span class="separator">//</span>
+      MODULE: PROFILE <span class="separator">//</span>
+      ENCRYPTION: AES-256 <span class="separator">//</span>
+      SECURE_CONNECTION <span class="separator">//</span>
+      USER_PANEL: ACTIVE <span class="separator">//</span>
+      MODULE: PROFILE <span class="separator">//</span>
+      ENCRYPTION: AES-256 <span class="separator">//</span>
+      SECURE_CONNECTION <span class="separator">//</span>
+    </span>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('adminToken');
+  if (!token) { window.location.href = '/access'; }
+
+  // Универсальная обёртка fetch с токеном и авто-редиректом
+  async function api(url, opts = {}) {
+    opts.headers = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + token });
+    const res = await fetch(url, opts);
+    if (res.status === 401) { localStorage.removeItem('adminToken'); window.location.href = '/access'; }
+    return res;
+  }
+
+  function showMsg(el, type, text) {
+    el.classList.remove('visible', 'success', 'error', 'info');
+    el.classList.add(type);
+    el.textContent = text;
+    void el.offsetWidth;
+    el.classList.add('visible');
+  }
+
+  function fmtDate(raw) {
+    if (!raw) return '—';
+    const d = new Date(raw.replace(' ', 'T'));
+    return isNaN(d) ? raw : d.toLocaleString('ru-RU');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  // ===== ВКЛАДКИ =====
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ===== ЗАГРУЗКА ПРОФИЛЯ =====
+  let profileData = null;
+  let statsData = null;
+
+  async function loadProfile() {
+    try {
+      const [pRes, sRes] = await Promise.all([
+        api('/api/user/profile'),
+        api('/api/user/stats')
+      ]);
+      const pData = await pRes.json();
+      const sData = await sRes.json();
+
+      if (!pData.success) { window.location.href = '/access'; return; }
+      profileData = pData.data;
+      statsData = sData.success ? sData.data : { orders: 0, comments: 0, posts: 0 };
+
+      renderProfile();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function renderProfile() {
+    const u = profileData;
+    document.getElementById('subUsername').textContent = u.username;
+    document.getElementById('subRole').textContent = u.role.toUpperCase();
+    document.getElementById('infoId').textContent = u.id;
+    document.getElementById('infoUsername').textContent = u.username;
+    document.getElementById('infoEmail').textContent = u.email || '—';
+    document.getElementById('infoCreated').textContent = fmtDate(u.created_at);
+    document.getElementById('infoLastLogin').textContent = fmtDate(u.last_login_at);
+
+    const roleEl = document.getElementById('infoRole');
+    roleEl.textContent = u.role.toUpperCase();
+    roleEl.className = 'value role-' + u.role;
+
+    document.getElementById('statOrders').textContent = statsData.orders;
+    document.getElementById('statComments').textContent = statsData.comments;
+    document.getElementById('statPosts').textContent = statsData.posts;
+
+    // Аватар
+    const avContainer = document.getElementById('avatarContainer');
+    if (u.avatar) {
+      avContainer.innerHTML = `<img src="${escapeHtml(u.avatar)}" alt="avatar" class="avatar-img" id="avatarImg">`;
+    } else {
+      avContainer.innerHTML = `<div class="avatar-placeholder">◉</div>`;
+    }
+
+    // Форма редактирования
+    document.getElementById('editUsername').value = u.username || '';
+    document.getElementById('editEmail').value = u.email || '';
+    document.getElementById('editBio').value = u.bio || '';
+  }
+
+  // ===== АВАТАР =====
+  const avatarInput = document.getElementById('avatarInput');
+  document.getElementById('uploadAvatarBtn').addEventListener('click', () => avatarInput.click());
+
+  avatarInput.addEventListener('change', async () => {
+    const file = avatarInput.files[0];
+    if (!file) return;
+    const msg = document.getElementById('avatarMsg');
+    const fd = new FormData();
+    fd.append('avatar', file);
+
+    try {
+      const res = await api('/api/user/profile/avatar', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        showMsg(msg, 'success', '✓ Аватар обновлён');
+        profileData.avatar = data.avatar;
+        renderProfile();
+      } else {
+        showMsg(msg, 'error', 'Ошибка: ' + data.error);
+      }
+    } catch (e) {
+      showMsg(msg, 'error', 'Сбой соединения');
+    } finally {
+      avatarInput.value = '';
+    }
+  });
+
+  document.getElementById('deleteAvatarBtn').addEventListener('click', async () => {
+    if (!confirm('Удалить аватар?')) return;
+    const msg = document.getElementById('avatarMsg');
+    try {
+      const res = await api('/api/user/profile/avatar', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showMsg(msg, 'success', '✓ Аватар удалён');
+        profileData.avatar = null;
+        renderProfile();
+      } else {
+        showMsg(msg, 'error', 'Ошибка: ' + data.error);
+      }
+    } catch (e) {
+      showMsg(msg, 'error', 'Сбой соединения');
+    }
+  });
+
+  // ===== РЕДАКТИРОВАНИЕ ПРОФИЛЯ =====
+  document.getElementById('editForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('editSubmit');
+    const msg = document.getElementById('editMsg');
+    btn.disabled = true; btn.textContent = '[ СОХРАНЕНИЕ... ]';
+
+    const body = {
+      username: document.getElementById('editUsername').value.trim(),
+      email: document.getElementById('editEmail').value.trim(),
+      bio: document.getElementById('editBio').value
+    };
+
+    try {
+      const res = await api('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        if (data.token) localStorage.setItem('adminToken', data.token);
+        if (data.user) localStorage.setItem('adminUser', JSON.stringify(data.user));
+        showMsg(msg, 'success', '✓ Профиль обновлён');
+        await loadProfile();
+      } else {
+        showMsg(msg, 'error', 'Ошибка: ' + data.error);
+      }
+    } catch (e) {
+      showMsg(msg, 'error', 'Сбой соединения');
+    } finally {
+      btn.disabled = false; btn.textContent = '[ СОХРАНИТЬ ]';
+    }
+  });
+
+  // ===== СМЕНА ПАРОЛЯ =====
+  const newPwd = document.getElementById('newPwd');
+  const newPwd2 = document.getElementById('newPwd2');
+  const pwdHint = document.getElementById('pwdMatchHint');
+
+  function checkPwdMatch() {
+    if (!newPwd2.value) {
+      pwdHint.textContent = 'Пароли должны совпадать';
+      pwdHint.style.color = 'rgba(255,255,255,0.4)';
+      return;
+    }
+    if (newPwd.value === newPwd2.value) {
+      pwdHint.textContent = '✓ Пароли совпадают';
+      pwdHint.style.color = 'var(--green)';
+    } else {
+      pwdHint.textContent = '✕ Пароли не совпадают';
+      pwdHint.style.color = 'var(--red)';
+    }
+  }
+  newPwd.addEventListener('input', checkPwdMatch);
+  newPwd2.addEventListener('input', checkPwdMatch);
+
+  document.getElementById('pwdForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('pwdMsg');
+    const btn = document.getElementById('pwdSubmit');
+
+    const oldP = document.getElementById('oldPwd').value;
+    const newP = newPwd.value;
+    const newP2 = newPwd2.value;
+
+    if (newP.length < 6) { showMsg(msg, 'error', 'Минимум 6 символов'); return; }
+    if (newP !== newP2) { showMsg(msg, 'error', 'Пароли не совпадают'); return; }
+
+    btn.disabled = true; btn.textContent = '[ СМЕНА... ]';
+
+    try {
+      const res = await api('/api/user/profile/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPassword: oldP, newPassword: newP })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showMsg(msg, 'success', '✓ Пароль изменён');
+        document.getElementById('pwdForm').reset();
+        pwdHint.textContent = 'Пароли должны совпадать';
+        pwdHint.style.color = 'rgba(255,255,255,0.4)';
+      } else {
+        showMsg(msg, 'error', 'Ошибка: ' + data.error);
+      }
+    } catch (e) {
+      showMsg(msg, 'error', 'Сбой соединения');
+    } finally {
+      btn.disabled = false; btn.textContent = '[ СМЕНИТЬ ПАРОЛЬ ]';
+    }
+  });
+
+  // ===== ЗАКАЗЫ =====
+  async function loadOrders() {
+    const list = document.getElementById('ordersList');
+    try {
+      const res = await api('/api/user/orders');
+      const data = await res.json();
+      if (!data.success || !data.data.length) {
+        list.innerHTML = '<div class="empty-state">Заказов пока нет</div>';
+        return;
+      }
+      list.innerHTML = data.data.map(o => {
+        const itemsHtml = (o.items || []).map(it =>
+          `<div class="order-meta">• ${escapeHtml(it.merch_name || 'Товар')} × ${it.quantity}${it.size ? ' (' + escapeHtml(it.size) + ')' : ''} — ${it.price} ₽</div>`
+        ).join('');
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <div class="order-id">ЗАКАЗ #${o.id}</div>
+              <div class="order-status ${o.status}">${o.status}</div>
+            </div>
+            <div class="order-meta">Дата: ${fmtDate(o.created_at)}</div>
+            ${itemsHtml}
+            <div class="order-total">Итого: ${o.total_amount} ₽</div>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+    }
+  }
+
+  // ===== КОММЕНТАРИИ =====
+  async function loadComments() {
+    const list = document.getElementById('commentsList');
+    try {
+      const res = await api('/api/user/comments');
+      const data = await res.json();
+      if (!data.success || !data.data.length) {
+        list.innerHTML = '<div class="empty-state">Комментариев пока нет</div>';
+        return;
+      }
+      list.innerHTML = data.data.map(c => `
+        <div class="comment-card">
+          <div class="post-title">► ${escapeHtml(c.post_title || 'Пост #' + c.post_id)}</div>
+          <div class="comment-content">${escapeHtml(c.content)}</div>
+          <div class="comment-date">${fmtDate(c.created_at)}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
+    }
+  }
+
+  // Ленивая загрузка вкладок
+  document.querySelector('.tab[data-tab="orders"]').addEventListener('click', loadOrders);
+  document.querySelector('.tab[data-tab="comments"]').addEventListener('click', loadComments);
+
+  // Старт
+  loadProfile();
+</script>
+</body>
+</html>

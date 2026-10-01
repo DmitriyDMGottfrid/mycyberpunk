@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBERPUNK // ДОСТУП</title>
+<style>
+  :root {
+    --cyan: #00ffff;
+    --magenta: #ff00ff;
+    --yellow: #ffcc00;
+    --green: #00ff00;
+    --red: #ff0040;
+    --bg-dark: #05060a;
+    --bg-panel: rgba(5, 6, 10, 0.85);
+    --font-mono: 'Courier New', Courier, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-dark);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    overflow-x: hidden;
+    overflow-y: auto;
+    cursor: crosshair;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.08) 3px,
+      rgba(0,0,0,0) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .menu {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px 25px;
+    z-index: 100;
+    padding: 15px 25px;
+    background: rgba(5, 6, 10, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    max-width: 95vw;
+  }
+
+  .menu-item {
+    position: relative;
+    padding: 6px 12px 6px 22px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s, text-shadow 0.2s;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .menu-item::before {
+    content: '[';
+    position: absolute;
+    left: 4px;
+    color: var(--magenta);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .menu-item .bracket {
+    color: var(--magenta);
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-left: 14px;
+  }
+
+  .menu-item::after {
+    content: '_';
+    position: absolute;
+    right: 22px;
+    bottom: 6px;
+    color: var(--magenta);
+    opacity: 0;
+  }
+
+  .menu-item:hover {
+    color: var(--magenta);
+    text-shadow: 0 0 8px var(--magenta);
+  }
+
+  .menu-item:hover::before,
+  .menu-item:hover::after,
+  .menu-item:hover .bracket { opacity: 1; }
+
+  .menu-item:hover::after { animation: blink 0.8s step-end infinite; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .menu-item.active {
+    color: var(--yellow);
+    text-shadow: 0 0 10px var(--yellow);
+  }
+
+  .menu-item.active::before,
+  .menu-item.active::after,
+  .menu-item.active .bracket {
+    opacity: 1;
+    color: var(--yellow);
+  }
+
+  .menu-item.active::after { animation: blink 0.8s step-end infinite; }
+
+  .hero-section {
+    position: relative;
+    height: 50vh;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 60px;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: -10%;
+    width: 120%;
+    height: 120%;
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a051a 50%, #0a0a1a 100%);
+    z-index: 1;
+  }
+
+  .hero-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 15s linear infinite;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(40px, 40px); }
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 20%, rgba(5,6,10,0.9) 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .hero-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+    background: linear-gradient(to top, var(--bg-dark), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 4;
+    text-align: center;
+  }
+
+  .site-title {
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: bold;
+    letter-spacing: 10px;
+    color: #fff;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px rgba(0,255,255,0.5);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .site-title::before,
+  .site-title::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .site-title::before {
+    color: var(--cyan);
+    z-index: -1;
+    animation: glitchTop 3s infinite linear alternate-reverse;
+  }
+
+  .site-title::after {
+    color: var(--magenta);
+    z-index: -2;
+    animation: glitchBottom 2.5s infinite linear alternate-reverse;
+  }
+
+  @keyframes glitchTop {
+    0%, 90%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    92% { clip-path: inset(20% 0 60% 0); transform: translate(-4px, -2px); }
+    94% { clip-path: inset(60% 0 10% 0); transform: translate(4px, 2px); }
+  }
+
+  @keyframes glitchBottom {
+    0%, 88%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    90% { clip-path: inset(70% 0 5% 0); transform: translate(4px, 2px); }
+    93% { clip-path: inset(10% 0 50% 0); transform: translate(-4px, -2px); }
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--magenta);
+    text-shadow: 0 0 10px var(--magenta);
+  }
+
+  .access-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 6px 16px;
+    border: 1px solid var(--yellow);
+    background: rgba(255, 204, 0, 0.1);
+    color: var(--yellow);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: pulseBorder 2s infinite;
+  }
+
+  @keyframes pulseBorder {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 204, 0, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); }
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 5;
+  }
+
+  .auth-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 40px;
+    border: 1px solid rgba(0,255,255,0.3);
+    background: var(--bg-panel);
+  }
+
+  .auth-tab {
+    flex: 1;
+    max-width: 300px;
+    padding: 15px 30px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: rgba(0,255,255,0.6);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  .auth-tab.active {
+    color: #fff;
+    background: rgba(0,255,255,0.1);
+    text-shadow: 0 0 10px var(--cyan);
+  }
+
+  .auth-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+  }
+
+  .auth-tab:hover:not(.active) {
+    color: var(--cyan);
+    background: rgba(0,255,255,0.05);
+  }
+
+  .auth-form {
+    display: none;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 35px;
+    background: var(--bg-panel);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-left: 3px solid var(--cyan);
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+  }
+
+  .auth-form.active {
+    display: block;
+    animation: fadeSlideIn 0.5s ease-out;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-form::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--bg-dark);
+    padding: 0 10px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+
+  .form-group {
+    margin-bottom: 25px;
+    position: relative;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .form-label::before {
+    content: '> ';
+    color: var(--cyan);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 15px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,255,0.2);
+    outline: none;
+    transition: all 0.3s;
+  }
+
+  .form-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0,255,255,0.3);
+    background: rgba(0,0,0,0.7);
+  }
+
+  .form-input.error {
+    border-color: var(--red);
+    box-shadow: 0 0 15px rgba(255,0,64,0.3);
+  }
+
+  .form-input.success {
+    border-color: var(--green);
+    box-shadow: 0 0 15px rgba(0,255,0,0.3);
+  }
+
+  .form-input::placeholder {
+    color: rgba(255,255,255,0.3);
+  }
+
+  .input-hint {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 6px;
+  }
+
+  .input-hint.error { color: var(--red); }
+  .input-hint.success { color: var(--green); }
+
+  .password-wrapper {
+    position: relative;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    padding: 5px 10px;
+    transition: all 0.2s;
+  }
+
+  .password-toggle:hover {
+    color: var(--magenta);
+    text-shadow: 0 0 8px var(--magenta);
+  }
+
+  .password-strength {
+    margin-top: 8px;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .password-strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s;
+  }
+
+  .password-strength-fill.weak { width: 25%; background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .password-strength-fill.medium { width: 50%; background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+  .password-strength-fill.strong { width: 75%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .password-strength-fill.very-strong { width: 100%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  .strength-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    display: none;
+  }
+
+  .checkbox-custom {
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--cyan);
+    background: rgba(0,0,0,0.5);
+    position: relative;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .checkbox-group input:checked + .checkbox-custom {
+    background: rgba(0,255,255,0.2);
+    box-shadow: 0 0 10px rgba(0,255,255,0.3);
+  }
+
+  .checkbox-group input:checked + .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--cyan);
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .checkbox-label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .checkbox-label a {
+    color: var(--cyan);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--cyan);
+    transition: all 0.2s;
+  }
+
+  .checkbox-label a:hover {
+    color: var(--magenta);
+    border-color: var(--magenta);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 15px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    background: transparent;
+    border: 1px solid var(--cyan);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .submit-btn:hover::before {
+    left: 100%;
+  }
+
+  .submit-btn:hover {
+    background: rgba(0,255,255,0.1);
+    box-shadow: 0 0 25px rgba(0,255,255,0.5);
+    text-shadow: 0 0 10px var(--cyan);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .submit-btn.scanning {
+    color: var(--yellow);
+    border-color: var(--yellow);
+    animation: scanPulse 1s infinite;
+  }
+
+  @keyframes scanPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(255,204,0,0.3); }
+    50% { box-shadow: 0 0 25px rgba(255,204,0,0.8); }
+  }
+
+  .auth-message {
+    margin-top: 20px;
+    padding: 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    line-height: 1.6;
+    display: none;
+    border-left: 3px solid;
+  }
+
+  .auth-message.visible {
+    display: block;
+    animation: fadeSlideIn 0.4s ease-out;
+  }
+
+  .auth-message.success {
+    background: rgba(0,255,0,0.1);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .auth-message.error {
+    background: rgba(255,0,64,0.1);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .auth-message.info {
+    background: rgba(0,255,255,0.1);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .access-levels {
+    margin-top: 60px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(0,255,255,0.3);
+    padding-bottom: 10px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0,255,255,0.5);
+  }
+
+  .section-header .line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
+
+  .levels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .level-card {
+    position: relative;
+    background: var(--bg-panel);
+    border: 1px solid rgba(0,255,255,0.2);
+    padding: 25px 20px;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+  }
+
+  .level-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--cyan);
+    transition: all 0.3s;
+  }
+
+  .level-card.level-guest::before { background: rgba(255,255,255,0.4); }
+  .level-card.level-user::before { background: var(--cyan); }
+  .level-card.level-subscriber::before { background: var(--magenta); }
+  .level-card.level-operator::before { background: var(--yellow); }
+
+  .level-card:hover {
+    border-color: rgba(0,255,255,0.5);
+    box-shadow: 0 0 25px rgba(0,255,255,0.15);
+    transform: translateY(-5px);
+  }
+
+  .level-card.current {
+    border-color: var(--green);
+    box-shadow: 0 0 20px rgba(0,255,0,0.3);
+  }
+
+  .level-card.current::after {
+    content: 'ТЕКУЩИЙ';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 3px 8px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--green);
+    border: 1px solid var(--green);
+    background: rgba(0,255,0,0.1);
+  }
+
+  .level-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    color: var(--cyan);
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .level-guest .level-icon { color: rgba(255,255,255,0.5); text-shadow: none; }
+  .level-user .level-icon { color: var(--cyan); }
+  .level-subscriber .level-icon { color: var(--magenta); }
+  .level-operator .level-icon { color: var(--yellow); }
+
+  .level-name {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #fff;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .level-code {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    margin-bottom: 15px;
+  }
+
+  .level-features {
+    list-style: none;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.8;
+  }
+
+  .level-features li::before {
+    content: '► ';
+    color: var(--cyan);
+    font-size: 9px;
+  }
+
+  .level-features li.locked {
+    color: rgba(255,255,255,0.3);
+  }
+
+  .level-features li.locked::before {
+    content: '✕ ';
+    color: var(--red);
+  }
+
+  .security-notice {
+    margin-top: 40px;
+    padding: 20px;
+    background: rgba(255,0,64,0.05);
+    border: 1px solid rgba(255,0,64,0.3);
+    border-left: 3px solid var(--red);
+  }
+
+  .security-notice-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--red);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .security-notice-title::before {
+    content: '⚠ ';
+  }
+
+  .security-notice-text {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+  }
+
+  .side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(420px, 85vw);
+    height: calc(100vh - 28px);
+    background: linear-gradient(135deg, rgba(5,5,15,0.97) 0%, rgba(10,0,20,0.98) 100%);
+    border-left: 2px solid var(--cyan);
+    box-shadow: -10px 0 40px rgba(0,255,255,0.2), inset 0 0 60px rgba(0,255,255,0.03);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 150;
+    padding: 80px 35px 35px;
+    overflow-y: auto;
+  }
+
+  .side-panel.open { transform: translateX(0); }
+
+  .side-panel::before, .side-panel::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--magenta);
+  }
+  .side-panel::before { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+  .side-panel::after { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+
+  .panel-close {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .panel-close:hover { background: rgba(255,0,255,0.15); box-shadow: 0 0 15px rgba(255,0,255,0.5); color: #fff; }
+
+  .panel-mode { font-size: 11px; letter-spacing: 4px; color: var(--magenta); margin-bottom: 8px; text-transform: uppercase; opacity: 0.8; }
+  .panel-mode::before { content: '> '; color: var(--cyan); }
+  .panel-title { font-size: 22px; letter-spacing: 3px; color: #fff; text-transform: uppercase; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,255,255,0.3); text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+
+  .typewriter-block {
+    position: relative;
+    padding: 20px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-left: 3px solid var(--cyan);
+    margin-bottom: 25px;
+  }
+  .typewriter-block::before {
+    content: 'SYS.MSG';
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: #050510;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .typewriter-text { font-size: 18px; letter-spacing: 2px; color: var(--green); text-shadow: 0 0 8px rgba(0,255,0,0.6); min-height: 28px; line-height: 1.4; }
+  .typewriter-cursor { display: inline-block; width: 10px; height: 20px; background: var(--green); margin-left: 4px; vertical-align: middle; animation: cursorBlink 0.7s step-end infinite; box-shadow: 0 0 8px var(--green); }
+  @keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .status-lines { font-size: 11px; letter-spacing: 1px; color: rgba(0,255,255,0.7); line-height: 1.8; margin-bottom: 30px; }
+  .status-lines .line { opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.3s; }
+  .status-lines .line.visible { opacity: 1; transform: translateX(0); }
+  .status-lines .line .ok { color: var(--green); text-shadow: 0 0 5px var(--green); }
+  .status-lines .line .warn { color: var(--yellow); text-shadow: 0 0 5px var(--yellow); }
+
+  .uplink-content {
+    display: none;
+    margin-top: 20px;
+  }
+
+  .uplink-content.visible {
+    display: block;
+    animation: fadeSlideIn 0.5s ease-out;
+  }
+
+  .contact-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,255,255,0.3);
+    border-left: 3px solid var(--magenta);
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+  }
+
+  .contact-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: #0a0015;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--magenta);
+    text-transform: uppercase;
+  }
+
+  .contact-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-bottom: 1px dashed rgba(0,255,255,0.15);
+  }
+
+  .contact-row:last-child { border-bottom: none; }
+  .contact-row .label { color: rgba(0,255,255,0.7); }
+  .contact-row .value { color: #fff; text-shadow: 0 0 5px rgba(0,255,255,0.5); font-weight: bold; }
+  .contact-row .value.encrypted { color: var(--yellow); font-family: monospace; letter-spacing: 2px; }
+  .contact-row .value.secure { color: var(--green); text-shadow: 0 0 5px var(--green); }
+
+  .uplink-warning {
+    margin-top: 20px;
+    padding: 12px;
+    background: rgba(255,0,64,0.1);
+    border: 1px solid rgba(255,0,64,0.4);
+    border-left: 3px solid var(--red);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #ff6680;
+    line-height: 1.6;
+  }
+
+  .uplink-warning::before {
+    content: '⚠ ВНИМАНИЕ: ';
+    color: var(--red);
+    font-weight: bold;
+    text-shadow: 0 0 5px var(--red);
+  }
+
+  .implant-choice {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.5s, transform 0.5s;
+    border-top: 1px dashed rgba(255,0,255,0.3);
+    padding-top: 20px;
+  }
+  .implant-choice.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .choice-prompt { font-size: 14px; letter-spacing: 2px; color: #fff; margin-bottom: 20px; text-align: center; text-shadow: 0 0 8px rgba(255,255,255,0.5); animation: promptPulse 2s infinite; }
+  @keyframes promptPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .choice-buttons { display: flex; gap: 15px; justify-content: center; }
+
+  .cyber-btn {
+    flex: 1;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    background: transparent;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+  .cyber-btn::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.3s;
+  }
+  .cyber-btn:hover::before { left: 100%; }
+  .yes-btn { border-color: var(--green); color: var(--green); box-shadow: 0 0 10px rgba(0,255,0,0.2); }
+  .yes-btn:hover { background: rgba(0,255,0,0.15); box-shadow: 0 0 20px rgba(0,255,0,0.6); text-shadow: 0 0 8px var(--green); }
+  .no-btn { border-color: var(--red); color: var(--red); box-shadow: 0 0 10px rgba(255,0,64,0.2); }
+  .no-btn:hover { background: rgba(255,0,64,0.15); box-shadow: 0 0 20px rgba(255,0,64,0.6); text-shadow: 0 0 8px var(--red); }
+
+  .transition-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .transition-overlay.active { opacity: 1; pointer-events: all; }
+  .transition-text { font-size: 24px; letter-spacing: 5px; color: var(--cyan); text-shadow: 0 0 15px var(--cyan); margin-bottom: 20px; animation: glitch 0.3s infinite; }
+  .progress-bar { width: 300px; height: 4px; background: rgba(0,255,255,0.2); position: relative; overflow: hidden; }
+  .progress-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes glitch {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    20% { filter: hue-rotate(90deg) saturate(2); transform: translate(-2px, 1px); }
+    40% { filter: hue-rotate(180deg) saturate(1.5); transform: translate(2px, -1px); }
+    60% { filter: hue-rotate(270deg) saturate(2); transform: translate(-1px, -1px); }
+    80% { filter: hue-rotate(360deg) saturate(1.2); transform: translate(1px, 1px); }
+    100% { filter: hue-rotate(0deg) saturate(1); transform: translate(0); }
+  }
+
+  .system-ticker {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    background: rgba(0, 5, 10, 0.95);
+    border-top: 1px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    z-index: 90;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    text-shadow: 0 0 5px rgba(0,255,255,0.5);
+  }
+  .ticker-track { display: flex; white-space: nowrap; animation: scrollTicker 25s linear infinite; }
+  .ticker-track span { padding-right: 60px; display: flex; align-items: center; gap: 15px; }
+  .ticker-track .separator { color: var(--magenta); font-weight: bold; }
+  @keyframes scrollTicker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  .sound-btn {
+    position: fixed;
+    bottom: 40px;
+    right: 20px;
+    padding: 10px 18px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    z-index: 200;
+    transition: all 0.2s;
+  }
+  .sound-btn:hover { background: rgba(0,255,255,0.1); box-shadow: 0 0 15px rgba(0,255,255,0.5); }
+  .sound-btn.muted { border-color: var(--magenta); color: var(--magenta); }
+
+  .cyber-footer {
+    background: #020205;
+    border-top: 1px solid rgba(0,255,255,0.2);
+    padding: 40px 20px 60px;
+    text-align: center;
+    position: relative;
+    z-index: 5;
+  }
+  .footer-copy { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+  .footer-copy span { color: var(--magenta); }
+
+  @media (max-width: 768px) {
+    .menu { gap: 10px 15px; padding: 10px 15px; }
+    .menu-item { font-size: 9px; letter-spacing: 1px; padding: 5px 8px; }
+    .menu-item .bracket { margin-left: 8px; }
+    .site-title { letter-spacing: 4px; }
+    .auth-form { padding: 25px 20px; }
+    .levels-grid { grid-template-columns: 1fr; }
+    .choice-buttons { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+  <nav class="menu">
+    <a href="/hub" class="menu-item" data-mode="HUB">Центральный_хаб<span class="bracket">]</span></a>
+    <a href="/stream" class="menu-item" data-mode="STREAM">Поток_данных<span class="bracket">]</span></a>
+    <a href="/manifest" class="menu-item" data-mode="MANIFEST">Манифест<span class="bracket">]</span></a>
+    <a href="/logs" class="menu-item" data-mode="LOGS">Логи<span class="bracket">]</span></a>
+    <a href="/matrix" class="menu-item" data-mode="MATRIX">Матрица_образов<span class="bracket">]</span></a>
+    <a href="/access" class="menu-item active" data-mode="ACCESS">Доступ<span class="bracket">]</span></a>
+    <a href="/ripper" class="menu-item" data-mode="RIPPER">Риппердок<span class="bracket">]</span></a>
+    <a href="/cog" class="menu-item" data-mode="COG">Когнитивный_фид<span class="bracket">]</span></a>
+    <a href="/implant" class="menu-item" data-mode="IMPLANT">Имплантаты<span class="bracket">]</span></a>
+  </nav>
+
+  <div class="side-panel" id="sidePanel">
+    <button class="panel-close" id="panelClose">✕</button>
+    <div class="panel-mode" id="panelMode">MODE: ACCESS</div>
+    <div class="panel-title" id="panelTitle">Инициализация</div>
+
+    <div class="typewriter-block">
+      <div class="typewriter-text" id="typewriterText"></div>
+      <span class="typewriter-cursor" id="typewriterCursor"></span>
+    </div>
+
+    <div class="status-lines" id="statusLines">
+      <div class="line" data-delay="200">> Нейронный интерфейс... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="400">> Синхронизация кортекса... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="600">> Калибровка зрительного модуля... <span class="ok">[OK]</span></div>
+      <div class="line" data-delay="800">> Подключение к сети... <span class="warn">[WAIT]</span></div>
+      <div class="line" data-delay="1000">> Шифрование канала AES-256... <span class="ok">[OK]</span></div>
+    </div>
+
+    <div class="uplink-content" id="uplinkContent">
+      <div class="contact-block" data-label="КАНАЛЫ СВЯЗИ">
+        <div class="contact-row">
+          <span class="label">Зашифрованный email:</span>
+          <span class="value encrypted">booshes@mail.ru</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Комм-линк:</span>
+          <span class="value">+7 (951)298-95-60</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Нейро-частота:</span>
+          <span class="value secure">144.7 MHz [SECURE]</span>
+        </div>
+      </div>
+
+      <div class="contact-block" data-label="ТОЧКА СБРОСА">
+        <div class="contact-row">
+          <span class="label">Геолокация:</span>
+          <span class="value">Камчатский край</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Координаты:</span>
+          <span class="value encrypted">52.82815996002017 N, 158.13302884255168 E</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Часы работы:</span>
+          <span class="value">24/7 // БЕЗ ВЫХОДНЫХ</span>
+        </div>
+      </div>
+
+      <div class="contact-block" data-label="СОЦ. СЕТИ">
+        <div class="contact-row">
+          <span class="label">VK:</span>
+          <span class="value">ID:381628178</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">TeleGram:</span>
+          <span class="value">@DmitriyDM97</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">Synaploids implants:</span>
+          <span class="value secure">Synaploid-free zone / sector</span>
+        </div>
+      </div>
+
+      <div class="uplink-warning">
+        Все каналы связи проходят через прокси-серверы корпорации. 
+        Не передавайте персональные данные без верификации PGP-ключа. 
+        Ответ в течение 24 часов.
+      </div>
+    </div>
+
+    <div class="implant-choice" id="implantChoice">
+      <div class="choice-prompt">> ЗАДЕЙСТВОВАТЬ ИМПЛАНТАТ?</div>
+      <div class="choice-buttons">
+        <button class="cyber-btn yes-btn" id="btnYes">[ ДА ]</button>
+        <button class="cyber-btn no-btn" id="btnNo">[ НЕТ ]</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="transition-overlay" id="transitionOverlay">
+    <div class="transition-text" id="transitionText">ПЕРЕХОД В РАЗДЕЛ...</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <section class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1 class="site-title" data-text="ДОСТУП">ДОСТУП</h1>
+      <div class="hero-subtitle">> АВТОРИЗАЦИЯ_В_СИСТЕМЕ // НЕЙРО-ВЕРИФИКАЦИЯ <</div>
+      <div class="access-badge">
+        🔒 ЗАЩИЩЁННЫЙ КАНАЛ
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <div class="auth-switcher">
+      <button class="auth-tab active" data-tab="login">[ ВХОД ]</button>
+      <button class="auth-tab" data-tab="register">[ РЕГИСТРАЦИЯ ]</button>
+    </div>
+
+    <form class="auth-form active" id="loginForm" data-label="АВТОРИЗАЦИЯ_ПОЛЬЗОВАТЕЛЯ">
+      <div class="form-group">
+        <label class="form-label" for="loginUsername">Позывной</label>
+        <input type="text" class="form-input" id="loginUsername" placeholder="Введите ваш позывной..." autocomplete="username">
+        <div class="input-hint">Идентификатор в системе</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="loginPassword">Ключ доступа</label>
+        <div class="password-wrapper">
+          <input type="password" class="form-input" id="loginPassword" placeholder="Введите пароль..." autocomplete="current-password">
+          <button type="button" class="password-toggle" data-target="loginPassword">[ ПОКАЗАТЬ ]</button>
+        </div>
+        <div class="input-hint">Минимум 6 символов</div>
+      </div>
+
+      <label class="checkbox-group">
+        <input type="checkbox" id="rememberMe">
+        <span class="checkbox-custom"></span>
+        <span class="checkbox-label">Запомнить устройство на 30 дней</span>
+      </label>
+
+      <button type="submit" class="submit-btn" id="loginSubmit">[ ПОДКЛЮЧИТЬСЯ ]</button>
+      <div class="auth-message" id="loginMessage"></div>
+    </form>
+
+    <form class="auth-form" id="registerForm" data-label="НОВАЯ_ИДЕНТИФИКАЦИЯ">
+      <div class="form-group">
+        <label class="form-label" for="regUsername">Позывной</label>
+        <input type="text" class="form-input" id="regUsername" placeholder="Придумайте позывной..." autocomplete="username">
+        <div class="input-hint">3-20 символов, латиница и цифры</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regEmail">Зашифрованный email</label>
+        <input type="email" class="form-input" id="regEmail" placeholder="your@secure.net" autocomplete="email">
+        <div class="input-hint">Используется для восстановления доступа</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regPassword">Ключ доступа</label>
+        <div class="password-wrapper">
+          <input type="password" class="form-input" id="regPassword" placeholder="Создайте пароль..." autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="regPassword">[ ПОКАЗАТЬ ]</button>
+        </div>
+        <div class="password-strength">
+          <div class="password-strength-fill" id="strengthFill"></div>
+        </div>
+        <div class="strength-label" id="strengthLabel">Надёжность: не определено</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="regPasswordConfirm">Подтверждение ключа</label>
+        <div class="password-wrapper">
+          <input type="password" class="form-input" id="regPasswordConfirm" placeholder="Повторите пароль..." autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="regPasswordConfirm">[ ПОКАЗАТЬ ]</button>
+        </div>
+        <div class="input-hint" id="matchHint">Пароли должны совпадать</div>
+      </div>
+
+      <label class="checkbox-group">
+        <input type="checkbox" id="acceptTerms" required>
+        <span class="checkbox-custom"></span>
+        <span class="checkbox-label">Принимаю <a href="#">протокол безопасности</a> и <a href="#">условия сети</a></span>
+      </label>
+
+      <label class="checkbox-group">
+        <input type="checkbox" id="subscribeNews">
+        <span class="checkbox-custom"></span>
+        <span class="checkbox-label">Подписаться на поток данных (новости системы)</span>
+      </label>
+
+      <button type="submit" class="submit-btn" id="registerSubmit">[ СОЗДАТЬ_ИДЕНТИФИКАТОР ]</button>
+      <div class="auth-message" id="registerMessage"></div>
+    </form>
+
+    <section class="access-levels">
+      <div class="section-header">
+        <h2>[ УРОВНИ_ДОСТУПА ]</h2>
+        <div class="line"></div>
+      </div>
+
+      <div class="levels-grid" id="dynamicLevelsGrid">
+        <div style="color: var(--cyan); text-align: center; padding: 40px; grid-column: 1 / -1;">Загрузка протоколов безопасности...</div>
+      </div>
+    </section>
+
+    <div class="security-notice">
+      <div class="security-notice-title">ПРОТОКОЛ БЕЗОПАСНОСТИ</div>
+      <div class="security-notice-text">
+        Все соединения шифруются по протоколу AES-256. Пароли хранятся в хешированном виде (bcrypt). 
+        Мы не передаём данные третьим лицам. При подозрительной активности аккаунт блокируется автоматически. 
+        Рекомендуется использовать уникальный позывной и двухфакторную аутентификацию.
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="cyber-footer">
+    <div class="footer-copy">
+      © 2026 MY_CYBERPUNK <span>//</span> ALL RIGHTS RESERVED <span>//</span> DESIGNED IN NIGHT CITY
+    </div>
+  </footer>
+
+  <div class="system-ticker">
+    <div class="ticker-track">
+      <span>
+        SYS.ONLINE <span class="separator">//</span> 
+        AUTH_MODULE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        SECURE_CHANNEL: ENABLED <span class="separator">//</span>
+        SYS.ONLINE <span class="separator">//</span> 
+        AUTH_MODULE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        SECURE_CHANNEL: ENABLED <span class="separator">//</span>
+      </span>
+      <span>
+        SYS.ONLINE <span class="separator">//</span> 
+        AUTH_MODULE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        SECURE_CHANNEL: ENABLED <span class="separator">//</span>
+        SYS.ONLINE <span class="separator">//</span> 
+        AUTH_MODULE: ACTIVE <span class="separator">//</span> 
+        ENCRYPTION: AES-256 <span class="separator">//</span> 
+        USER: GUEST <span class="separator">//</span>
+        SECURE_CHANNEL: ENABLED <span class="separator">//</span>
+      </span>
+    </div>
+  </div>
+
+  <button class="sound-btn" id="soundBtn">■ ВЫКЛ ЗВУК</button>
+
+<script>
+  // DOM элементы
+  const sidePanel = document.getElementById('sidePanel');
+  const panelClose = document.getElementById('panelClose');
+  const panelMode = document.getElementById('panelMode');
+  const panelTitle = document.getElementById('panelTitle');
+  const typewriterText = document.getElementById('typewriterText');
+  const implantChoice = document.getElementById('implantChoice');
+  const uplinkContent = document.getElementById('uplinkContent');
+  const btnYes = document.getElementById('btnYes');
+  const btnNo = document.getElementById('btnNo');
+  const transitionOverlay = document.getElementById('transitionOverlay');
+  const transitionText = document.getElementById('transitionText');
+  const progressFill = document.getElementById('progressFill');
+  const statusLines = document.querySelectorAll('.status-lines .line');
+  const soundBtn = document.getElementById('soundBtn');
+
+  const authTabs = document.querySelectorAll('.auth-tab');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const loginSubmit = document.getElementById('loginSubmit');
+  const registerSubmit = document.getElementById('registerSubmit');
+  const loginMessage = document.getElementById('loginMessage');
+  const registerMessage = document.getElementById('registerMessage');
+  const regPassword = document.getElementById('regPassword');
+  const regPasswordConfirm = document.getElementById('regPasswordConfirm');
+  const strengthFill = document.getElementById('strengthFill');
+  const strengthLabel = document.getElementById('strengthLabel');
+  const matchHint = document.getElementById('matchHint');
+  const passwordToggles = document.querySelectorAll('.password-toggle');
+  const dynamicLevelsGrid = document.getElementById('dynamicLevelsGrid');
+
+  let currentMode = 'ACCESS';
+  let typeWriterTimer = null;
+  let statusTimers = [];
+  let soundEnabled = true;
+  let audioCtx = null;
+
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      audioCtx = null;
+    }
+  }
+
+  function playKeyClick() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 800 + Math.random() * 400;
+    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function playSuccessSound() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  function playErrorSound() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    initAudio();
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) {
+      soundBtn.textContent = '■ ВЫКЛ ЗВУК';
+      soundBtn.classList.remove('muted');
+    } else {
+      soundBtn.textContent = '▶ ВКЛ ЗВУК';
+      soundBtn.classList.add('muted');
+    }
+  });
+
+  function unlockAudio() {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+  }
+
+  document.addEventListener('click', unlockAudio, { once: true });
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+
+  authTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      authTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      playKeyClick();
+
+      const target = tab.dataset.tab;
+      if (target === 'login') {
+        loginForm.classList.add('active');
+        registerForm.classList.remove('active');
+      } else {
+        registerForm.classList.add('active');
+        loginForm.classList.remove('active');
+      }
+
+      loginMessage.classList.remove('visible', 'success', 'error', 'info');
+      registerMessage.classList.remove('visible', 'success', 'error', 'info');
+    });
+  });
+
+  passwordToggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '[ СКРЫТЬ ]';
+      } else {
+        input.type = 'password';
+        btn.textContent = '[ ПОКАЗАТЬ ]';
+      }
+      playKeyClick();
+    });
+  });
+
+  function checkPasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.length >= 10) strength++;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  }
+
+  regPassword.addEventListener('input', () => {
+    const password = regPassword.value;
+    const strength = checkPasswordStrength(password);
+
+    strengthFill.className = 'password-strength-fill';
+    
+    if (password.length === 0) {
+      strengthLabel.textContent = 'Надёжность: не определено';
+      strengthLabel.style.color = 'rgba(255,255,255,0.4)';
+    } else if (strength <= 1) {
+      strengthFill.classList.add('weak');
+      strengthLabel.textContent = 'Надёжность: СЛАБЫЙ';
+      strengthLabel.style.color = 'var(--red)';
+    } else if (strength <= 2) {
+      strengthFill.classList.add('medium');
+      strengthLabel.textContent = 'Надёжность: СРЕДНИЙ';
+      strengthLabel.style.color = 'var(--yellow)';
+    } else if (strength <= 3) {
+      strengthFill.classList.add('strong');
+      strengthLabel.textContent = 'Надёжность: ХОРОШИЙ';
+      strengthLabel.style.color = 'var(--cyan)';
+    } else {
+      strengthFill.classList.add('very-strong');
+      strengthLabel.textContent = 'Надёжность: ОЧЕНЬ ХОРОШИЙ';
+      strengthLabel.style.color = 'var(--green)';
+    }
+
+    checkPasswordMatch();
+  });
+
+  function checkPasswordMatch() {
+    const pass = regPassword.value;
+    const confirm = regPasswordConfirm.value;
+
+    if (confirm.length === 0) {
+      matchHint.textContent = 'Пароли должны совпадать';
+      matchHint.className = 'input-hint';
+      regPasswordConfirm.classList.remove('error', 'success');
+      return;
+    }
+
+    if (pass === confirm) {
+      matchHint.textContent = '✓ Пароли совпадают';
+      matchHint.className = 'input-hint success';
+      regPasswordConfirm.classList.remove('error');
+      regPasswordConfirm.classList.add('success');
+    } else {
+      matchHint.textContent = '✕ Пароли не совпадают';
+      matchHint.className = 'input-hint error';
+      regPasswordConfirm.classList.remove('success');
+      regPasswordConfirm.classList.add('error');
+    }
+  }
+
+  regPasswordConfirm.addEventListener('input', checkPasswordMatch);
+
+  // ===== РЕАЛЬНАЯ ОТПРАВКА ФОРМЫ ВХОДА =====
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    playKeyClick();
+
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    if (!username || !password) {
+      showMessage(loginMessage, 'error', 'ОШИБКА: Заполните все поля для подключения.');
+      playErrorSound();
+      return;
+    }
+
+    loginSubmit.classList.add('scanning');
+    loginSubmit.textContent = '[ СКАНИРОВАНИЕ... ]';
+    loginSubmit.disabled = true;
+    showMessage(loginMessage, 'info', 'Инициализация нейро-верификации... Проверка ключей...');
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // Сохраняем токен (используем adminToken для совместимости с админкой)
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.user));
+        
+        showMessage(loginMessage, 'success', `✓ ДОСТУП РАЗРЕШЁН. Добро пожаловать, ${data.user.username.toUpperCase()}.`);
+        playSuccessSound();
+        
+        setTimeout(() => {
+          window.location.href = '/hub';
+        }, 1500);
+      } else {
+        showMessage(loginMessage, 'error', `ОШИБКА: ${data.error}`);
+        playErrorSound();
+        loginSubmit.classList.remove('scanning');
+        loginSubmit.textContent = '[ ПОДКЛЮЧИТЬСЯ ]';
+        loginSubmit.disabled = false;
+      }
+    } catch (err) {
+      showMessage(loginMessage, 'error', 'ОШИБКА: Сбой соединения с сервером.');
+      playErrorSound();
+      loginSubmit.classList.remove('scanning');
+      loginSubmit.textContent = '[ ПОДКЛЮЧИТЬСЯ ]';
+      loginSubmit.disabled = false;
+    }
+  });
+
+  // ===== РЕАЛЬНАЯ ОТПРАВКА ФОРМЫ РЕГИСТРАЦИИ =====
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    playKeyClick();
+
+    const username = document.getElementById('regUsername').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = regPassword.value;
+    const confirm = regPasswordConfirm.value;
+    const acceptTerms = document.getElementById('acceptTerms').checked;
+
+    if (!username || !email || !password || !confirm) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Все поля обязательны для заполнения.');
+      playErrorSound();
+      return;
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Позывной должен содержать от 3 до 20 символов.');
+      playErrorSound();
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Позывной может содержать только латиницу, цифры и _');
+      playErrorSound();
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Некорректный формат email.');
+      playErrorSound();
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Ключ доступа слишком короткий (мин. 6 символов).');
+      playErrorSound();
+      return;
+    }
+
+    if (password !== confirm) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Ключи доступа не совпадают.');
+      playErrorSound();
+      return;
+    }
+
+    if (!acceptTerms) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Необходимо принять протокол безопасности.');
+      playErrorSound();
+      return;
+    }
+
+    registerSubmit.classList.add('scanning');
+    registerSubmit.textContent = '[ СОЗДАНИЕ_ИДЕНТИФИКАТОРА... ]';
+    registerSubmit.disabled = true;
+    showMessage(registerMessage, 'info', 'Генерация крипто-ключа... Хеширование пароля... Создание профиля...');
+
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.user));
+        
+        showMessage(registerMessage, 'success', `✓ ИДЕНТИФИКАТОР СОЗДАН. Позывной: ${data.user.username.toUpperCase()}. Добро пожаловать в систему.`);
+        playSuccessSound();
+        
+        setTimeout(() => {
+          window.location.href = '/hub';
+        }, 2000);
+      } else {
+        showMessage(registerMessage, 'error', `ОШИБКА: ${data.error}`);
+        playErrorSound();
+        registerSubmit.classList.remove('scanning');
+        registerSubmit.textContent = '[ СОЗДАТЬ_ИДЕНТИФИКАТОР ]';
+        registerSubmit.disabled = false;
+      }
+    } catch (err) {
+      showMessage(registerMessage, 'error', 'ОШИБКА: Сбой соединения с сервером.');
+      playErrorSound();
+      registerSubmit.classList.remove('scanning');
+      registerSubmit.textContent = '[ СОЗДАТЬ_ИДЕНТИФИКАТОР ]';
+      registerSubmit.disabled = false;
+    }
+  });
+
+  function showMessage(element, type, text) {
+    element.classList.remove('visible', 'success', 'error', 'info');
+    element.classList.add(type);
+    element.textContent = text;
+    void element.offsetWidth;
+    element.classList.add('visible');
+  }
+
+  // ===== ДИНАМИЧЕСКАЯ ЗАГРУЗКА УРОВНЕЙ ДОСТУПА =====
+  async function loadAccessLevels() {
+    try {
+      const response = await fetch('/api/access-levels');
+      const data = await response.json();
+
+      if (!data.success || data.data.length === 0) {
+        dynamicLevelsGrid.innerHTML = '<div style="color: var(--red); text-align: center; padding: 40px; grid-column: 1 / -1;">Не удалось загрузить протоколы</div>';
+        return;
+      }
+
+      const levels = data.data;
+      
+      const getLevelClass = (code) => {
+        if (code.includes('GUEST')) return 'level-guest';
+        if (code.includes('USER')) return 'level-user';
+        if (code.includes('SUB')) return 'level-subscriber';
+        if (code.includes('OPS') || code.includes('ADMIN')) return 'level-operator';
+        return 'level-user';
+      };
+
+      dynamicLevelsGrid.innerHTML = levels.map(level => {
+        const levelClass = getLevelClass(level.code);
+        const featuresHtml = level.features.map(f => `<li>${f}</li>`).join('');
+        
+        return `
+          <div class="level-card ${levelClass}">
+            <div class="level-icon">${level.icon}</div>
+            <div class="level-name">${level.name}</div>
+            <div class="level-code">CODE: ${level.code}</div>
+            <ul class="level-features">
+              ${featuresHtml}
+            </ul>
+          </div>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error('Ошибка загрузки уровней:', err);
+      dynamicLevelsGrid.innerHTML = '<div style="color: var(--red); text-align: center; padding: 40px; grid-column: 1 / -1;">Ошибка соединения с сервером</div>';
+    }
+  }
+
+  function typeWriter(text, element, speed = 70) {
+    return new Promise(resolve => {
+      element.textContent = '';
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          playKeyClick();
+          i++;
+          const delay = speed + (Math.random() - 0.5) * 40;
+          typeWriterTimer = setTimeout(type, delay);
+        } else {
+          resolve();
+        }
+      }
+      type();
+    });
+  }
+
+  function openPanel(mode, title) {
+    currentMode = mode;
+    panelMode.textContent = `MODE: ${mode}`;
+    panelTitle.textContent = title;
+    
+    statusLines.forEach(line => line.classList.remove('visible'));
+    statusTimers.forEach(t => clearTimeout(t));
+    statusTimers = [];
+    implantChoice.classList.remove('visible');
+    uplinkContent.classList.remove('visible');
+    
+    sidePanel.classList.add('open');
+    if (typeWriterTimer) clearTimeout(typeWriterTimer);
+    
+    const uplinkMessage = mode === 'UPLINK' ? 'Канал связи открыт' : 'Имплантат активирован';
+    
+    typeWriter(uplinkMessage, typewriterText, 80).then(() => {
+      statusLines.forEach(line => {
+        const delay = parseInt(line.dataset.delay);
+        const timer = setTimeout(() => {
+          line.classList.add('visible');
+          playKeyClick();
+        }, delay);
+        statusTimers.push(timer);
+      });
+
+      setTimeout(() => {
+        if (mode === 'UPLINK') {
+          uplinkContent.classList.add('visible');
+        } else {
+          implantChoice.classList.add('visible');
+        }
+      }, 1200);
+    });
+  }
+
+  function closePanel() {
+    sidePanel.classList.remove('open');
+    if (typeWriterTimer) clearTimeout(typeWriterTimer);
+    statusTimers.forEach(t => clearTimeout(t));
+    statusTimers = [];
+    implantChoice.classList.remove('visible');
+    uplinkContent.classList.remove('visible');
+  }
+
+  panelClose.addEventListener('click', () => {
+    playKeyClick();
+    closePanel();
+  });
+  
+  btnNo.addEventListener('click', () => {
+    playKeyClick();
+    closePanel();
+  });
+
+  btnYes.addEventListener('click', () => {
+    playSuccessSound();
+    
+    const titles = {
+      'HUB': 'ЦЕНТРАЛЬНЫЙ ХАБ',
+      'STREAM': 'ПОТОК ДАННЫХ',
+      'MANIFEST': 'МАНИФЕСТ',
+      'LOGS': 'АРХИВ ЛОГОВ',
+      'MATRIX': 'МАТРИЦА ОБРАЗОВ',
+      'ACCESS': 'УРОВЕНЬ ДОСТУПА',
+      'RIPPER': 'РИППЕРДОК-КЛИНИКА',
+      'COG': 'КОГНИТИВНЫЙ ФИД',
+      'IMPLANT': 'КАТАЛОГ ИМПЛАНТАТОВ',
+      'UPLINK': 'АПЛИНК-КАНАЛ'
+    };
+    
+    transitionText.textContent = `ЗАГРУЗКА: ${titles[currentMode] || 'МОДУЛЬ'}...`;
+    transitionOverlay.classList.add('active');
+    
+    setTimeout(() => { progressFill.style.width = '100%'; }, 100);
+
+    setTimeout(() => {
+      transitionOverlay.classList.remove('active');
+      progressFill.style.width = '0%';
+      closePanel();
+    }, 1500);
+  });
+
+  const menuItems = document.querySelectorAll('.menu-item');
+  const menuTitles = {
+    'HUB': 'Центральный хаб',
+    'STREAM': 'Поток данных',
+    'MANIFEST': 'Манифест системы',
+    'LOGS': 'Архив логов',
+    'MATRIX': 'Матрица образов',
+    'ACCESS': 'Уровень доступа',
+    'RIPPER': 'Риппердок-клиника',
+    'COG': 'Когнитивный фид',
+    'IMPLANT': 'Каталог имплантатов',
+    'UPLINK': 'Аплинк-канал'
+  };
+
+  menuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menuItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      playKeyClick();
+      
+      const mode = (item.dataset.mode || '').toUpperCase();
+      if (mode === 'ACCESS') {
+        closePanel();
+        return;
+      }
+      // Для остальных режимов — показываем панель.
+      // Переход произойдёт после подтверждения в панели.
+      e.preventDefault();
+      if (mode) {
+        openPanel(mode, menuTitles[mode] || 'Инициализация');
+      }
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target === panelClose || e.target === btnNo || e.target === btnYes || e.target === soundBtn) return;
+    if (!sidePanel.contains(e.target) && !e.target.closest('.menu-item')) {
+      closePanel();
+    }
+  });
+
+  // Запуск при загрузке
+  loadAccessLevels();
+</script>
+<script src="/js/navigation.js"></script>
+<script src="/js/user-nav.js"></script>
+</body>
+</html>
